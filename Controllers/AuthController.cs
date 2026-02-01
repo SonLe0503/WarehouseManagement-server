@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -24,7 +25,9 @@ namespace warehouseManagement.Controllers
         [HttpPost("login")]
         public IActionResult Login(LoginRequestDTO request)
         {
-            var user = _context.Users.FirstOrDefault(u => u.Username == request.Username);
+            var user = _context.Users
+                .Include(u => u.Roles)
+                .FirstOrDefault(u => u.Username == request.Username);
             if (user == null)
             {
                 return Unauthorized(new { message = "Username không tồn tại" });
@@ -34,15 +37,20 @@ namespace warehouseManagement.Controllers
             {
                 return Unauthorized(new { message = "Mật khẩu không đúng" });
             }
+            var claims = new List<Claim>
+            {
+                  new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+            };
+
+            foreach (var role in user.Roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role.Name));
+            }
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(_config["Jwt: Key"]);
+            var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                    new Claim(ClaimTypes.Name, user.Username),
-                }),
+                Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddMinutes(30),
                 Issuer = _config["Jwt:Issuer"],
                 Audience = _config["Jwt:Audience"],
