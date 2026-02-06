@@ -46,7 +46,6 @@ builder.Services.AddSwaggerGen(c =>
         Description = "API Authentication with JWT for WarehouseManagement"
     });
 
-    // Thêm cấu hình bảo mật cho JWT
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -57,7 +56,6 @@ builder.Services.AddSwaggerGen(c =>
         Description = "Nhập token ở dạng: Bearer {token}"
     });
 
-    // Áp dụng yêu cầu bảo mật cho tất cả endpoint có [Authorize]
     c.OperationFilter<AuthorizeCheckOperationFilter>();
 });
 
