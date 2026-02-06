@@ -1,7 +1,11 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
 using System.Text;
+using warehouseManagement.Filters;
+using warehouseManagement.Mappers;
 using warehouseManagement.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +20,7 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod()
               .AllowCredentials());
 });
+builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -32,10 +37,34 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 });
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "WarehouseManagement API",
+        Version = "v1",
+        Description = "API Authentication with JWT for WarehouseManagement"
+    });
+
+    // Thêm cấu hình bảo mật cho JWT
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Nhập token ở dạng: Bearer {token}"
+    });
+
+    // Áp dụng yêu cầu bảo mật cho tất cả endpoint có [Authorize]
+    c.OperationFilter<AuthorizeCheckOperationFilter>();
+});
+
 var app = builder.Build();
 app.UseCors("AllowAll");
 app.UseAuthentication();
+app.UseAuthorization();
 app.UseHttpsRedirection();
 app.MapControllers();
 app.UseSwagger();
