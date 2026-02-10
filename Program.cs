@@ -15,10 +15,12 @@ builder.Services.AddDbContext<WmsContext>(options =>
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
-        policy.WithOrigins("http://localhost:5173")
+    {
+        policy.WithOrigins("http://localhost:5173", "http://localhost:5174" , "http://localhost:7069") 
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials());
+              .AllowCredentials(); 
+    });
 });
 builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
