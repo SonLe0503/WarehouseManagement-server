@@ -7,6 +7,7 @@ using System.Text;
 using warehouseManagement.Filters;
 using warehouseManagement.Mappers;
 using warehouseManagement.Models;
+using warehouseManagement.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +17,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:5174" , "http://localhost:7069") 
+       
+        policy.WithOrigins("http://localhost:5173")
+
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials(); 
@@ -39,6 +42,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 });
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
