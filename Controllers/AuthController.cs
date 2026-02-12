@@ -32,6 +32,12 @@ namespace warehouseManagement.Controllers
             {
                 return Unauthorized(new { message = "Username không tồn tại" });
             }
+
+            if (user.Status != "Active")
+            {
+                return Unauthorized(new { message = "Tài khoản đã bị vô hiệu hóa" });
+            }
+
             bool verifyPassword = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
             if (!verifyPassword)
             {
