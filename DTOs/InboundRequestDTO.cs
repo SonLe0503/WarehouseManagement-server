@@ -18,4 +18,10 @@ namespace warehouseManagement.DTOs
 
 
     }
+    public class ApproveInboundRequestDTO
+    {
+        public string Action { get; set; } = null!;         // "Approve" hoặc "Reject"
+        //public string? Comment { get; set; }
+        //public string? RejectReason { get; set; }           // Chỉ dùng khi Action = "Reject"
+    }
 }
