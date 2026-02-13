@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using warehouseManagement.Models;
+using warehouseManagement.Services;
 
 namespace warehouseManagement.Controllers
 {
@@ -12,11 +13,13 @@ namespace warehouseManagement.Controllers
     {
         private readonly WmsContext _context;
         private readonly IMapper _mapper;
+        private readonly IEmailService _emailService;
 
-        public UserController(WmsContext context, IMapper mapper)
+        public UserController(WmsContext context, IMapper mapper, IEmailService emailService)
         {
             _context = context;
             _mapper = mapper;
+            _emailService = emailService;
         }
 
         [Authorize]
@@ -33,21 +36,17 @@ namespace warehouseManagement.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] DTOs.CreateUserDTO dto)
         {
-            // 1. Validate cơ bản
             if (string.IsNullOrWhiteSpace(dto.Username))
                 return BadRequest("Username is required");
 
-            if (string.IsNullOrWhiteSpace(dto.Password))
-                return BadRequest("Password is required");
+            var tempPassword = Guid.NewGuid().ToString("N").Substring(0, 8);
 
-            // 2. Check username tồn tại
             var exists = await _context.Users
                 .AnyAsync(u => u.Username == dto.Username);
 
             if (exists)
                 return BadRequest("Username already exists");
 
-            // 3. Validate role
             List<Role> roles = new();
 
             if (dto.RoleIds != null && dto.RoleIds.Any())
@@ -86,9 +85,9 @@ namespace warehouseManagement.Controllers
             {
                 Username = dto.Username,
                 Email = dto.Email,
-                Status = string.IsNullOrEmpty(dto.Status) ? "Active" : dto.Status,
+                Status = string.IsNullOrEmpty(dto.Status) ? "ACIT" : dto.Status,
                 CreatedAt = DateTime.UtcNow,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password)
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(tempPassword)
             };
 
             foreach (var role in roles)
@@ -98,6 +97,23 @@ namespace warehouseManagement.Controllers
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
+
+            var body = $@"
+                <h3>Tài khoản WMS System</h3>
+                <p>Xin chào,</p>
+                <p>Tài khoản của bạn đã được tạo thành công:</p>
+                <ul>
+                     <li><b>Username:</b> {dto.Username}</li>
+                     <li><b>Password tạm:</b> {tempPassword}</li>
+                </ul>
+                <p>Vui lòng đăng nhập và đổi mật khẩu ngay.</p>
+            ";
+
+            await _emailService.SendAsync(
+                dto.Email,
+                "Thông tin tài khoản HR System",
+                body
+            );
 
             return Ok(new
             {
@@ -117,9 +133,15 @@ namespace warehouseManagement.Controllers
             if (user == null)
                 return NotFound("User not found");
 
+            var oldEmail = user.Email;
+            var oldStatus = user.Status;
+            var oldRoleIds = user.Roles.Select(r => r.Id).ToList();
+
             _mapper.Map(dto, user);
             user.UpdatedAt = DateTime.UtcNow;
+
             bool isAdmin = user.Roles.Any(r => r.Id == 1);
+            bool roleChanged = false;
 
             if (dto.RoleIds != null && !isAdmin)
             {
@@ -140,22 +162,79 @@ namespace warehouseManagement.Controllers
                         invalidRoleIds
                     });
                 }
+
                 user.Roles.Clear();
 
                 foreach (var role in roles)
                 {
                     user.Roles.Add(role);
                 }
+
+                roleChanged = !oldRoleIds.OrderBy(x => x)
+                             .SequenceEqual(roleIds.OrderBy(x => x));
             }
 
             await _context.SaveChangesAsync();
 
+            // ===== SEND EMAIL IF SOMETHING IMPORTANT CHANGED =====
+            bool emailChanged = oldEmail != user.Email;
+            bool statusChanged = oldStatus != user.Status;
+
+            if (emailChanged || roleChanged || statusChanged)
+            {
+                var roleNames = user.Roles.Select(r => r.Name);
+
+                var body = $@"
+            <h3>Thông tin tài khoản WMS System đã được cập nhật</h3>
+            <p>Xin chào {user.Username},</p>
+            <p>Tài khoản của bạn vừa được cập nhật:</p>
+            <ul>
+                <li><b>Email:</b> {user.Email}</li>
+                <li><b>Status:</b> {user.Status}</li>
+                <li><b>Roles:</b> {string.Join(", ", roleNames)}</li>
+            </ul>
+            <p>Nếu bạn không thực hiện thay đổi này, vui lòng liên hệ Admin.</p>
+        ";
+
+                await _emailService.SendAsync(
+                    user.Email,
+                    "Tài khoản WMS System đã được cập nhật",
+                    body
+                );
+            }
+
             return Ok("Update user successfully");
         }
 
+
         [Authorize(Roles = "ADMIN")]
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
+        [HttpPut("deactivate/{id}")]
+        public async Task<IActionResult> DeactivateUser(int id)
+        {
+            var user = await _context.Users
+                .Include(u => u.Roles)
+                .FirstOrDefaultAsync(u => u.Id == id);
+
+            if (user == null)
+                return NotFound("User not found");
+
+            if (user.Roles.Any(r => r.Id == 1))
+                return BadRequest("Cannot deactivate admin account");
+
+            if (user.Status == "Inactive")
+                return BadRequest("User already inactive");
+
+            user.Status = "Inactive";
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok("User deactivated successfully");
+        }
+
+        [Authorize(Roles = "ADMIN")]
+        [HttpPut("activate/{id}")]
+        public async Task<IActionResult> ActivateUser(int id)
         {
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Id == id);
@@ -163,20 +242,16 @@ namespace warehouseManagement.Controllers
             if (user == null)
                 return NotFound("User not found");
 
-            if (user.Roles.Any(r => r.Id == 1))
-            {
-                return BadRequest("Cannot delete admin account");
-            }
+            if (user.Status == "Active")
+                return BadRequest("User already active");
 
-            if (user.Status == "Deleted")
-                return BadRequest("User already deleted");
-
-            user.Status = "Deleted";
+            user.Status = "Active";
             user.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
-            return Ok("Delete user successfully");
+            return Ok("User activated successfully");
         }
+
     }
 }
