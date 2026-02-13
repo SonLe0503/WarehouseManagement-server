@@ -87,7 +87,7 @@ namespace warehouseManagement.Controllers
                 else // Reject
                 {
                     request.Status = "Rejected";
-                    // Nếu bạn thêm cột RejectedReason trong DB thì: request.RejectedReason = dto.RejectReason;
+                    //request.RejectedReason = dto.RejectReason;
                 }
 
                 // Log hành động duyệt (dùng bảng ApprovalLogs đã có)
@@ -97,7 +97,7 @@ namespace warehouseManagement.Controllers
                     Action = dto.Action == "Approve" ? "Approved" : "Rejected",
                     ActionBy = currentUserId,
                     ActionAt = DateTime.UtcNow,
-                    //Comment = dto.Comment ?? dto.RejectReason
+                    Comment = dto.Comment ?? dto.RejectReason
                 };
                 _context.ApprovalLogs.Add(log);
 

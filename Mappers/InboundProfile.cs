@@ -4,9 +4,9 @@ using warehouseManagement.Models;
 
 namespace warehouseManagement.Mappers
 {
-    public class ManageInboundProfile : Profile
+    public class InboundProfile : Profile
     {
-        public ManageInboundProfile() {
+        public InboundProfile() {
             CreateMap<InboundRequest, InboundRequestDTO>()
                 .ForMember(dest => dest.InboundItems, opt => opt.MapFrom(src => src.InboundItems));
 

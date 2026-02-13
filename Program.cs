@@ -21,7 +21,7 @@ builder.Services.AddCors(options =>
               .AllowCredentials());
 });
 builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
-builder.Services.AddAutoMapper(typeof(ManageInboundProfile).Assembly);
+builder.Services.AddAutoMapper(typeof(InboundProfile).Assembly);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     var jwtSettings = builder.Configuration.GetSection("Jwt");

@@ -19,11 +19,18 @@ namespace warehouseManagement.DTOs
         public int CreatedBy { get; set; }
 
         public int? ApprovedBy { get; set; }
+        //public DateTime? ApprovedAt { get; set; }
 
         public DateTime? CreatedAt { get; set; }
 
         public virtual ICollection<OutboundItem> OutboundItems { get; set; } = new List<OutboundItem>();
 
 
+    }
+    public class ApproveOutboundRequestDTO
+    {
+        public string Action { get; set; } = null!;        
+        public string? Comment { get; set; }
+        public string? RejectReason { get; set; }         
     }
 }
