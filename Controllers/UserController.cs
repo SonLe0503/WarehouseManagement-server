@@ -32,7 +32,7 @@ namespace warehouseManagement.Controllers
             return Ok(userDTOs);
         }
 
-        [Authorize(Roles = "ADMIN")]
+        //[Authorize(Roles = "ADMIN")]
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] DTOs.CreateUserDTO dto)
         {

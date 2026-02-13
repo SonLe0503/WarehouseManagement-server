@@ -32,58 +32,58 @@ namespace warehouseManagement.Controllers
         }
 
 
-        //[HttpPost]
-        //public async Task<IActionResult> CreateRole([FromBody] DTOs.CreateRoleDTO dto)
-        //{
-        //    if (string.IsNullOrWhiteSpace(dto.Name))
-        //        return BadRequest("Role name is required");
-
-        //    var roleName = dto.Name.Trim().ToUpper();
-
-        //    var exists = await _context.Roles
-        //        .AnyAsync(r => r.Name == roleName);
-
-        //    if (exists)
-        //        return BadRequest("Role already exists");
-
-        //    var role = new Role
-        //    {
-        //        Name = roleName
-        //    };
-
-        //    _context.Roles.Add(role);
-        //    await _context.SaveChangesAsync();
-
-        //    return Ok(new
-        //    {
-        //        message = "Create role successfully",
-        //        roleId = role.Id,
-        //        roleName = role.Name
-        //    });
-        //}
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteRole(int id)
-        //{
-        //    var role = await _context.Roles
-        //        .Include(r => r.Users)
-        //        .FirstOrDefaultAsync(r => r.Id == id);
-
-        //    if (role == null)
-        //        return NotFound("Role not found");
-
-        //    if (role.Users.Any())
-        //    {
-        //        return BadRequest(new
+        //        [HttpPost]
+        //        public async Task<IActionResult> CreateRole([FromBody] DTOs.CreateRoleDTO dto)
         //        {
-        //            message = "Cannot delete role because it is assigned to users",
-        //            userCount = role.Users.Count
-        //        });
-        //    }
+        //            if (string.IsNullOrWhiteSpace(dto.Name))
+        //                return BadRequest("Role name is required");
 
-        //    _context.Roles.Remove(role);
-        //    await _context.SaveChangesAsync();
+        //            var roleName = dto.Name.Trim().ToUpper();
 
-        //    return Ok("Delete role successfully");
-        //}
+        //            var exists = await _context.Roles
+        //                .AnyAsync(r => r.Name == roleName);
+
+        //            if (exists)
+        //                return BadRequest("Role already exists");
+
+        //            var role = new Role
+        //            {
+        //                Name = roleName
+        //            };
+
+        //            _context.Roles.Add(role);
+        //            await _context.SaveChangesAsync();
+
+        //            return Ok(new
+        //            {
+        //                message = "Create role successfully",
+        //                roleId = role.Id,
+        //                roleName = role.Name
+        //            });
+        //        }
+        //        [HttpDelete("{id}")]
+        //        public async Task<IActionResult> DeleteRole(int id)
+        //        {
+        //            var role = await _context.Roles
+        //                .Include(r => r.Users)
+        //                .FirstOrDefaultAsync(r => r.Id == id);
+
+        //            if (role == null)
+        //                return NotFound("Role not found");
+
+        //            if (role.Users.Any())
+        //            {
+        //                return BadRequest(new
+        //                {
+        //                    message = "Cannot delete role because it is assigned to users",
+        //                    userCount = role.Users.Count
+        //                });
+        //            }
+
+        //            _context.Roles.Remove(role);
+        //            await _context.SaveChangesAsync();
+
+        //            return Ok("Delete role successfully");
+        //        }
     }
 }
