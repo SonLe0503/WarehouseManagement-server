@@ -7,6 +7,7 @@ using System.Text;
 using warehouseManagement.Filters;
 using warehouseManagement.Mappers;
 using warehouseManagement.Models;
+using warehouseManagement.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,7 @@ builder.Services.AddCors(options =>
               .AllowCredentials());
 });
 builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     var jwtSettings = builder.Configuration.GetSection("Jwt");
