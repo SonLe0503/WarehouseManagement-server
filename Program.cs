@@ -7,7 +7,6 @@ using System.Text;
 using warehouseManagement.Filters;
 using warehouseManagement.Mappers;
 using warehouseManagement.Models;
-using warehouseManagement.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,7 +21,6 @@ builder.Services.AddCors(options =>
               .AllowCredentials());
 });
 builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
-builder.Services.AddAutoMapper(typeof(InboundProfile).Assembly);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -39,7 +37,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 });
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
