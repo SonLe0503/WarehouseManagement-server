@@ -20,6 +20,7 @@ public partial class OutboundRequest
     public int CreatedBy { get; set; }
 
     public int? ApprovedBy { get; set; }
+    //public DateTime? ApprovedAt { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 
