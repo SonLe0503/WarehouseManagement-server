@@ -8,7 +8,7 @@ using warehouseManagement.Models;
 
 namespace warehouseManagement.Controllers
 {
-    [Authorize(Roles = "SALES")]
+    [Authorize(Roles = "SALE")]
     [ApiController]
     [Route("api/outbound-requests")]
     public class OutboundRequestsController : Controller
@@ -94,6 +94,10 @@ namespace warehouseManagement.Controllers
             var request = await _context.OutboundRequests
                 .Include(r => r.OutboundItems)
                     .ThenInclude(i => i.Product)
+                        .ThenInclude(p => p.BaseUnit)
+                .Include(r => r.OutboundItems)
+                    .ThenInclude(i => i.Product)
+                        .ThenInclude(p => p.Category)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (request == null)
