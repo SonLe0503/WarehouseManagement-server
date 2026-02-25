@@ -19,6 +19,8 @@ public partial class User
 
     public DateTime? UpdatedAt { get; set; }
 
+    public int? WarehouseId { get; set; }
+
     public virtual ICollection<ApprovalLog> ApprovalLogs { get; set; } = new List<ApprovalLog>();
 
     public virtual ICollection<InboundRequest> InboundRequestApprovedByNavigations { get; set; } = new List<InboundRequest>();
@@ -32,6 +34,8 @@ public partial class User
     public virtual ICollection<StockTransferRequest> StockTransferRequestApprovedByNavigations { get; set; } = new List<StockTransferRequest>();
 
     public virtual ICollection<StockTransferRequest> StockTransferRequestCreatedByNavigations { get; set; } = new List<StockTransferRequest>();
+
+    public virtual Warehouse? Warehouse { get; set; }
 
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
 }
