@@ -28,4 +28,6 @@ public partial class Warehouse
     public virtual ICollection<StockTransferRequest> StockTransferRequestFromWarehouses { get; set; } = new List<StockTransferRequest>();
 
     public virtual ICollection<StockTransferRequest> StockTransferRequestToWarehouses { get; set; } = new List<StockTransferRequest>();
+
+    public virtual ICollection<User> Users { get; set; } = new List<User>();
 }

@@ -359,6 +359,10 @@ public partial class WmsContext : DbContext
             entity.Property(e => e.Status).HasMaxLength(20);
             entity.Property(e => e.Username).HasMaxLength(50);
 
+            entity.HasOne(d => d.Warehouse).WithMany(p => p.Users)
+                .HasForeignKey(d => d.WarehouseId)
+                .HasConstraintName("FK_Users_Warehouse");
+
             entity.HasMany(d => d.Roles).WithMany(p => p.Users)
                 .UsingEntity<Dictionary<string, object>>(
                     "UserRole",

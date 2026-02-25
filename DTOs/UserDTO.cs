@@ -7,6 +7,8 @@
         public string Email { get; set; }
         public string Status { get; set; }
         public List<string> Roles { get; set; }
+        public int? WarehouseId { get; set; }
+        public string? WarehouseName { get; set; }
         public DateTime? CreatedAt { get; set; }
     }
 
@@ -16,6 +18,7 @@
         public string Email { get; set; }
         public string Status { get; set; }
         public List<int> RoleIds { get; set; }
+        public int? WarehouseId { get; set; }
     }
 
     public class UpdateUserDTO
@@ -24,5 +27,6 @@
         public string Email { get; set; }
         public string Status { get; set; }
         public List<int> RoleIds { get; set; }
+        public int? WarehouseId { get; set; }
     }
 }

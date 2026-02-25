@@ -26,8 +26,10 @@ namespace warehouseManagement.Controllers
         [HttpGet]
         public IActionResult GetAllUsers()
         {
-            var users = _context.Users.
-                Include(u => u.Roles).ToList();
+            var users = _context.Users
+                .Include(u => u.Roles)
+                .Include(u => u.Warehouse)
+                .ToList();
             var userDTOs = _mapper.Map<List<DTOs.UserDTO>>(users);
             return Ok(userDTOs);
         }
@@ -88,13 +90,25 @@ namespace warehouseManagement.Controllers
                     });
                 }
             }
+            bool isAdminRole = roles.Any(r => r.Id == 1);
+
+            if (!isAdminRole && dto.WarehouseId == null)
+            {
+                return BadRequest("WarehouseId is required for non-admin users");
+            }
+
+            if (isAdminRole)
+            {
+                dto.WarehouseId = null;
+            }
             var user = new User
             {
                 Username = dto.Username,
                 Email = dto.Email,
                 Status = string.IsNullOrEmpty(dto.Status) ? "ACIT" : dto.Status,
                 CreatedAt = DateTime.UtcNow,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(tempPassword)
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(tempPassword),
+                WarehouseId = dto.WarehouseId
             };
 
             foreach (var role in roles)
@@ -179,6 +193,21 @@ namespace warehouseManagement.Controllers
 
                 roleChanged = !oldRoleIds.OrderBy(x => x)
                              .SequenceEqual(roleIds.OrderBy(x => x));
+            }
+            bool newIsAdmin = user.Roles.Any(r => r.Id == 1);
+
+            if (!newIsAdmin && dto.WarehouseId == null)
+            {
+                return BadRequest("WarehouseId is required for non-admin users");
+            }
+
+            if (newIsAdmin)
+            {
+                user.WarehouseId = null;
+            }
+            else
+            {
+                user.WarehouseId = dto.WarehouseId;
             }
 
             await _context.SaveChangesAsync();
