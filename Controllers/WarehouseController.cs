@@ -121,6 +121,16 @@ namespace warehouseManagement.Controllers
             var warehouse = await _context.Warehouses.FindAsync(id);
             if (warehouse == null)
                 return NotFound("Warehouse not found");
+
+            var hasStock = await _context.Inventories
+                .AnyAsync(i => i.WarehouseId == id && i.Quantity > 0);
+
+            if (hasStock)
+                return BadRequest("Cannot deactivate warehouse because it still has inventory.");
+
+            if (warehouse.Status == "Inactive")
+                return BadRequest("Warehouse already inactive");
+
             warehouse.Status = "Inactive";
             await _context.SaveChangesAsync();
             return Ok(new { message = "Warehouse deactived successfully" });
