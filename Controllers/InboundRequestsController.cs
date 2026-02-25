@@ -136,6 +136,10 @@ public class InboundRequestsController : ControllerBase
         var request = await _context.InboundRequests
             .Include(r => r.InboundItems)
                 .ThenInclude(i => i.Product)
+                  .ThenInclude(p => p.BaseUnit)
+            .Include(r => r.InboundItems)
+                .ThenInclude(i => i.Product)
+                  .ThenInclude(p => p.Category)
             .FirstOrDefaultAsync(r => r.Id == id);
 
         if (request == null)
