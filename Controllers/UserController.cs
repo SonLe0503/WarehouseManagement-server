@@ -38,14 +38,21 @@ namespace warehouseManagement.Controllers
         {
             if (string.IsNullOrWhiteSpace(dto.Username))
                 return BadRequest("Username is required");
+            if (string.IsNullOrWhiteSpace(dto.Email))
+                return BadRequest("Email is required");
 
             var tempPassword = Guid.NewGuid().ToString("N").Substring(0, 8);
 
             var exists = await _context.Users
                 .AnyAsync(u => u.Username == dto.Username);
-
             if (exists)
                 return BadRequest("Username already exists");
+
+            var emailExists = await _context.Users
+                .AnyAsync(u => u.Email == dto.Email);
+            if (emailExists)
+                return BadRequest("Email already exists");
+
 
             List<Role> roles = new();
 
