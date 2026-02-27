@@ -19,7 +19,11 @@ public partial class OutboundItem
 
     public string? LineNote { get; set; }
 
+    public int? UnitId { get; set; }
+
     public virtual OutboundRequest OutboundRequest { get; set; } = null!;
 
     public virtual Product Product { get; set; } = null!;
+
+    public virtual Unit? Unit { get; set; }
 }

@@ -60,6 +60,7 @@ public class InboundRequestsController : ControllerBase
                     InboundRequestId = request.Id,
                     ProductId = itemDto.ProductId,
                     Quantity = itemDto.Quantity,
+                    UnitId = itemDto.UnitId,
                     LineNote = itemDto.LineNote
                 };
                 _context.InboundItems.Add(item);
@@ -107,7 +108,7 @@ public class InboundRequestsController : ControllerBase
         request.WarehouseId = dto.WarehouseId;
         request.Status = "Pending";
 
-       
+
         if (dto.Items != null && dto.Items.Any())
         {
             foreach (var itemDto in dto.Items)
@@ -117,6 +118,7 @@ public class InboundRequestsController : ControllerBase
                     InboundRequestId = request.Id,
                     ProductId = itemDto.ProductId,
                     Quantity = itemDto.Quantity,
+                    UnitId = itemDto.UnitId,
                     LineNote = itemDto.LineNote
                 };
                 _context.InboundItems.Add(item);
@@ -134,6 +136,8 @@ public class InboundRequestsController : ControllerBase
         var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
         var request = await _context.InboundRequests
+            .Include(r => r.InboundItems)
+                .ThenInclude(i => i.Unit)
             .Include(r => r.InboundItems)
                 .ThenInclude(i => i.Product)
                   .ThenInclude(p => p.BaseUnit)

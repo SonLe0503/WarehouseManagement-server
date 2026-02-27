@@ -108,6 +108,11 @@ public partial class WmsContext : DbContext
                 .HasForeignKey(d => d.ProductId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__InboundIt__Produ__6E01572D");
+
+            entity.HasOne(d => d.Unit).WithMany(p => p.InboundItems)
+                .HasForeignKey(d => d.UnitId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_InboundItems_Unit");
         });
 
         modelBuilder.Entity<InboundRequest>(entity =>
@@ -176,6 +181,10 @@ public partial class WmsContext : DbContext
                 .HasForeignKey(d => d.ProductId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__OutboundI__Produ__787EE5A0");
+
+            entity.HasOne(d => d.Unit).WithMany(p => p.OutboundItems)
+                .HasForeignKey(d => d.UnitId)
+                .HasConstraintName("FK_OutboundItems_Unit");
         });
 
         modelBuilder.Entity<OutboundRequest>(entity =>

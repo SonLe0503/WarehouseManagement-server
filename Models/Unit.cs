@@ -19,6 +19,10 @@ public partial class Unit
 
     public DateTime? UpdatedAt { get; set; }
 
+    public virtual ICollection<InboundItem> InboundItems { get; set; } = new List<InboundItem>();
+
+    public virtual ICollection<OutboundItem> OutboundItems { get; set; } = new List<OutboundItem>();
+
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 
     public virtual ICollection<UnitConversion> UnitConversionBaseUnits { get; set; } = new List<UnitConversion>();

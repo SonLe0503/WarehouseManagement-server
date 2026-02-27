@@ -61,6 +61,7 @@ namespace warehouseManagement.Controllers
                         OutboundRequestId = request.Id,
                         ProductId = itemDto.ProductId,
                         Quantity = itemDto.Quantity,
+                        UnitId = itemDto.UnitId,
                         LineNote = itemDto.LineNote
                     };
 
@@ -92,6 +93,8 @@ namespace warehouseManagement.Controllers
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
             var request = await _context.OutboundRequests
+                .Include(r => r.OutboundItems)
+                .ThenInclude(o => o.Unit)
                 .Include(r => r.OutboundItems)
                     .ThenInclude(i => i.Product)
                         .ThenInclude(p => p.BaseUnit)
@@ -144,6 +147,7 @@ namespace warehouseManagement.Controllers
                         OutboundRequestId = request.Id,
                         ProductId = itemDto.ProductId,
                         Quantity = itemDto.Quantity,
+                        UnitId = itemDto.UnitId,
                         LineNote = itemDto.LineNote
                     };
 
