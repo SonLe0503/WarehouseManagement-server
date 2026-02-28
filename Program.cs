@@ -27,6 +27,7 @@ builder.Services.AddCors(options =>
 });
 builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IUnitConversionService, UnitConversionService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     var jwtSettings = builder.Configuration.GetSection("Jwt");
