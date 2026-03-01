@@ -22,7 +22,7 @@ namespace warehouseManagement.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<InboundRequestDTO>>> GetInboundRequests( )
+        public async Task<ActionResult<IEnumerable<InboundRequestDTO>>> GetInboundRequests()
         {
             var requests = await _context.InboundRequests
                 .Include(r => r.InboundItems)
@@ -56,7 +56,7 @@ namespace warehouseManagement.Controllers
             return Ok(requestDto);
         }
         [HttpPost("{id}/approval")]
-        [Authorize(Roles = "MANAGER,STAFF")]
+        [Authorize(Roles = "MANAGE,STAFF")]
         public async Task<IActionResult> ApproveOrReject(int id, [FromBody] ApproveInboundRequestDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -84,16 +84,16 @@ namespace warehouseManagement.Controllers
                     request.ApprovedBy = currentUserId;
                     request.ApprovedAt = DateTime.UtcNow;
                 }
-                else // Reject
+                else
                 {
                     request.Status = "Rejected";
-                    //request.RejectedReason = dto.RejectReason;
+
                 }
 
-                // Log hành động duyệt (dùng bảng ApprovalLogs đã có)
+
                 var log = new ApprovalLog
                 {
-                    // ApprovalId = null nếu chưa dùng bảng Approvals
+
                     Action = dto.Action == "Approve" ? "Approved" : "Rejected",
                     ActionBy = currentUserId,
                     ActionAt = DateTime.UtcNow,
@@ -113,9 +113,107 @@ namespace warehouseManagement.Controllers
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                // Log lỗi nếu cần
+
                 return StatusCode(500, "Lỗi khi xử lý duyệt đơn: " + ex.Message);
             }
+        }
+
+
+        [HttpPost("{id}/receive")]
+        [Authorize(Roles = "STAFF,MANAGE")]
+
+        public async Task<IActionResult> ReceiveGoods(int id, [FromBody] ReceiveInboundRequestDto dto)
+        {
+
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var request = await _context.InboundRequests
+                .Include(r => r.InboundItems)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (request == null) return NotFound("Không tìm thấy đơn nhập kho");
+
+            if (request.Status != "Approved") return BadRequest("Chỉ có thể nhận hàng cho đơn đã được duyệt");
+
+
+            var itemIds = request.InboundItems.Select(i => i.Id).ToHashSet();
+            var invalidIds = dto.Items
+            .Where(i => !itemIds.Contains(i.InboundItemId))
+            .Select(i => i.InboundItemId)
+            .ToList();
+
+
+            if (invalidIds.Any())
+            {
+                return BadRequest($"Các InboundItemId không hợp lệ: {string.Join(", ", invalidIds)}");
+            }
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+   
+                    foreach(var receiveItem in dto.Items)
+                    {
+                        var item = request.InboundItems.First(i => i.Id == receiveItem.InboundItemId);
+
+                        item.ReceivedQuantity = receiveItem.ReceivedQuantity;
+                        if (receiveItem.LineNote != null)
+                            item.LineNote = receiveItem.LineNote;
+
+                        var inventory = await _context.Inventories
+                         .FirstOrDefaultAsync(inv =>
+                           inv.ProductId == item.ProductId &&
+                           inv.WarehouseId == request.WarehouseId);
+
+                    if (inventory != null)
+                    {
+                        inventory.Quantity += receiveItem.ReceivedQuantity;
+                        inventory.UpdatedAt = DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        var newInventory = new Inventory
+                        {
+                            ProductId = item.ProductId,
+                            WarehouseId = request.WarehouseId,
+                            Quantity = receiveItem.ReceivedQuantity,
+                            UpdatedAt = DateTime.UtcNow
+                        };
+                        _context.Inventories.Add(newInventory);
+
+
+                    }
+
+                    var movement = new StockMovement
+                    {
+                        ProductId = item.ProductId,
+                        WarehouseId = request.WarehouseId,
+                        QuantityChange = receiveItem.ReceivedQuantity,
+                        RefType = "InboundRequest",
+                        RefId = request.Id,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.StockMovements.Add(movement);
+                }
+                request.Status = "Completed";
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+
+
+                return Ok(new
+                {
+                    Message = $"Nhận hàng cho đơn {request.RequestNo} thành công.",
+                    NewStatus = request.Status
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Lỗi khi xử lý nhận hàng: " + ex.Message);
+
+            }
+
         }
     }
 }

@@ -79,24 +79,6 @@ namespace warehouseManagement.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Users",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Username = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    PasswordHash = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true, defaultValueSql: "(sysdatetime())"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__Users__3214EC071C4F9126", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Warehouses",
                 columns: table => new
                 {
@@ -142,6 +124,121 @@ namespace warehouseManagement.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Username = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    PasswordHash = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true, defaultValueSql: "(sysdatetime())"),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    WarehouseId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK__Users__3214EC071C4F9126", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Users_Warehouse",
+                        column: x => x.WarehouseId,
+                        principalTable: "Warehouses",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Inventories",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    WarehouseId = table.Column<int>(type: "int", nullable: false),
+                    Quantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    StoragePosition = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true, defaultValueSql: "(sysdatetime())")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK__Inventor__3214EC07F523929A", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK__Inventori__Produ__5DCAEF64",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK__Inventori__Wareh__5EBF139D",
+                        column: x => x.WarehouseId,
+                        principalTable: "Warehouses",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "StockMovements",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    WarehouseId = table.Column<int>(type: "int", nullable: false),
+                    QuantityChange = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    StoragePosition = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    RefType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    RefId = table.Column<int>(type: "int", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true, defaultValueSql: "(sysdatetime())")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK__StockMov__3214EC072F62B318", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK__StockMove__Produ__628FA481",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK__StockMove__Wareh__6383C8BA",
+                        column: x => x.WarehouseId,
+                        principalTable: "Warehouses",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UnitConversions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    BaseUnitId = table.Column<int>(type: "int", nullable: false),
+                    FromUnitId = table.Column<int>(type: "int", nullable: false),
+                    ConversionFactor = table.Column<decimal>(type: "decimal(18,6)", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true, defaultValueSql: "(sysdatetime())"),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK__UnitConv__3214EC07806BF8FC", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UnitConversions_BaseUnit",
+                        column: x => x.BaseUnitId,
+                        principalTable: "Units",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_UnitConversions_FromUnit",
+                        column: x => x.FromUnitId,
+                        principalTable: "Units",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_UnitConversions_Product",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ApprovalLogs",
                 columns: table => new
                 {
@@ -165,28 +262,6 @@ namespace warehouseManagement.Migrations
                         name: "FK__ApprovalL__Appro__09A971A2",
                         column: x => x.ApprovalId,
                         principalTable: "Approvals",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "UserRoles",
-                columns: table => new
-                {
-                    UserId = table.Column<int>(type: "int", nullable: false),
-                    RoleId = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__UserRole__AF2760ADE460EA6E", x => new { x.UserId, x.RoleId });
-                    table.ForeignKey(
-                        name: "FK__UserRoles__RoleI__3F466844",
-                        column: x => x.RoleId,
-                        principalTable: "Roles",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK__UserRoles__UserI__3E52440B",
-                        column: x => x.UserId,
-                        principalTable: "Users",
                         principalColumn: "Id");
                 });
 
@@ -302,94 +377,25 @@ namespace warehouseManagement.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Inventories",
+                name: "UserRoles",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ProductId = table.Column<int>(type: "int", nullable: false),
-                    WarehouseId = table.Column<int>(type: "int", nullable: false),
-                    Quantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    StoragePosition = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true, defaultValueSql: "(sysdatetime())")
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    RoleId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK__Inventor__3214EC07F523929A", x => x.Id);
+                    table.PrimaryKey("PK__UserRole__AF2760ADE460EA6E", x => new { x.UserId, x.RoleId });
                     table.ForeignKey(
-                        name: "FK__Inventori__Produ__5DCAEF64",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
+                        name: "FK__UserRoles__RoleI__3F466844",
+                        column: x => x.RoleId,
+                        principalTable: "Roles",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK__Inventori__Wareh__5EBF139D",
-                        column: x => x.WarehouseId,
-                        principalTable: "Warehouses",
+                        name: "FK__UserRoles__UserI__3E52440B",
+                        column: x => x.UserId,
+                        principalTable: "Users",
                         principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "StockMovements",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ProductId = table.Column<int>(type: "int", nullable: false),
-                    WarehouseId = table.Column<int>(type: "int", nullable: false),
-                    QuantityChange = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    StoragePosition = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    RefType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    RefId = table.Column<int>(type: "int", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true, defaultValueSql: "(sysdatetime())")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__StockMov__3214EC072F62B318", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK__StockMove__Produ__628FA481",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK__StockMove__Wareh__6383C8BA",
-                        column: x => x.WarehouseId,
-                        principalTable: "Warehouses",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "UnitConversions",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ProductId = table.Column<int>(type: "int", nullable: false),
-                    BaseUnitId = table.Column<int>(type: "int", nullable: false),
-                    FromUnitId = table.Column<int>(type: "int", nullable: false),
-                    ConversionFactor = table.Column<decimal>(type: "decimal(18,6)", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true, defaultValueSql: "(sysdatetime())"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__UnitConv__3214EC07806BF8FC", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_UnitConversions_BaseUnit",
-                        column: x => x.BaseUnitId,
-                        principalTable: "Units",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_UnitConversions_FromUnit",
-                        column: x => x.FromUnitId,
-                        principalTable: "Units",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_UnitConversions_Product",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -403,11 +409,17 @@ namespace warehouseManagement.Migrations
                     Quantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ReceivedQuantity = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     StoragePosition = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    LineNote = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true)
+                    LineNote = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    UnitId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK__InboundI__3214EC075798DABA", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InboundItems_Unit",
+                        column: x => x.UnitId,
+                        principalTable: "Units",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK__InboundIt__Inbou__6D0D32F4",
                         column: x => x.InboundRequestId,
@@ -431,11 +443,17 @@ namespace warehouseManagement.Migrations
                     Quantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     PickedQuantity = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     StoragePosition = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    LineNote = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true)
+                    LineNote = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    UnitId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK__Outbound__3214EC0700E162EE", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OutboundItems_Unit",
+                        column: x => x.UnitId,
+                        principalTable: "Units",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK__OutboundI__Outbo__778AC167",
                         column: x => x.OutboundRequestId,
@@ -503,6 +521,11 @@ namespace warehouseManagement.Migrations
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_InboundItems_UnitId",
+                table: "InboundItems",
+                column: "UnitId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_InboundRequests_ApprovedBy",
                 table: "InboundRequests",
                 column: "ApprovedBy");
@@ -544,6 +567,11 @@ namespace warehouseManagement.Migrations
                 name: "IX_OutboundItems_ProductId",
                 table: "OutboundItems",
                 column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OutboundItems_UnitId",
+                table: "OutboundItems",
+                column: "UnitId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OutboundRequests_ApprovedBy",
@@ -663,6 +691,11 @@ namespace warehouseManagement.Migrations
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Users_WarehouseId",
+                table: "Users",
+                column: "WarehouseId");
+
+            migrationBuilder.CreateIndex(
                 name: "UQ__Users__536C85E4A48DD635",
                 table: "Users",
                 column: "Username",
@@ -724,13 +757,13 @@ namespace warehouseManagement.Migrations
                 name: "Users");
 
             migrationBuilder.DropTable(
-                name: "Warehouses");
-
-            migrationBuilder.DropTable(
                 name: "Units");
 
             migrationBuilder.DropTable(
                 name: "Categories");
+
+            migrationBuilder.DropTable(
+                name: "Warehouses");
         }
     }
 }

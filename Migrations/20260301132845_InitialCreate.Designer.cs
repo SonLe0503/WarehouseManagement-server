@@ -12,7 +12,7 @@ using warehouseManagement.Models;
 namespace warehouseManagement.Migrations
 {
     [DbContext(typeof(WmsContext))]
-    [Migration("20260208163834_InitialCreate")]
+    [Migration("20260301132845_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -163,12 +163,17 @@ namespace warehouseManagement.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("UnitId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id")
                         .HasName("PK__InboundI__3214EC075798DABA");
 
                     b.HasIndex("InboundRequestId");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("UnitId");
 
                     b.ToTable("InboundItems");
                 });
@@ -295,12 +300,17 @@ namespace warehouseManagement.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int?>("UnitId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id")
                         .HasName("PK__Outbound__3214EC0700E162EE");
 
                     b.HasIndex("OutboundRequestId");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("UnitId");
 
                     b.ToTable("OutboundItems");
                 });
@@ -691,8 +701,13 @@ namespace warehouseManagement.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int?>("WarehouseId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id")
                         .HasName("PK__Users__3214EC071C4F9126");
+
+                    b.HasIndex("WarehouseId");
 
                     b.HasIndex(new[] { "Username" }, "UQ__Users__536C85E4A48DD635")
                         .IsUnique();
@@ -796,9 +811,17 @@ namespace warehouseManagement.Migrations
                         .IsRequired()
                         .HasConstraintName("FK__InboundIt__Produ__6E01572D");
 
+                    b.HasOne("warehouseManagement.Models.Unit", "Unit")
+                        .WithMany("InboundItems")
+                        .HasForeignKey("UnitId")
+                        .IsRequired()
+                        .HasConstraintName("FK_InboundItems_Unit");
+
                     b.Navigation("InboundRequest");
 
                     b.Navigation("Product");
+
+                    b.Navigation("Unit");
                 });
 
             modelBuilder.Entity("warehouseManagement.Models.InboundRequest", b =>
@@ -860,9 +883,16 @@ namespace warehouseManagement.Migrations
                         .IsRequired()
                         .HasConstraintName("FK__OutboundI__Produ__787EE5A0");
 
+                    b.HasOne("warehouseManagement.Models.Unit", "Unit")
+                        .WithMany("OutboundItems")
+                        .HasForeignKey("UnitId")
+                        .HasConstraintName("FK_OutboundItems_Unit");
+
                     b.Navigation("OutboundRequest");
 
                     b.Navigation("Product");
+
+                    b.Navigation("Unit");
                 });
 
             modelBuilder.Entity("warehouseManagement.Models.OutboundRequest", b =>
@@ -1010,6 +1040,16 @@ namespace warehouseManagement.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("warehouseManagement.Models.User", b =>
+                {
+                    b.HasOne("warehouseManagement.Models.Warehouse", "Warehouse")
+                        .WithMany("Users")
+                        .HasForeignKey("WarehouseId")
+                        .HasConstraintName("FK_Users_Warehouse");
+
+                    b.Navigation("Warehouse");
+                });
+
             modelBuilder.Entity("warehouseManagement.Models.Approval", b =>
                 {
                     b.Navigation("ApprovalLogs");
@@ -1054,6 +1094,10 @@ namespace warehouseManagement.Migrations
 
             modelBuilder.Entity("warehouseManagement.Models.Unit", b =>
                 {
+                    b.Navigation("InboundItems");
+
+                    b.Navigation("OutboundItems");
+
                     b.Navigation("Products");
 
                     b.Navigation("UnitConversionBaseUnits");
@@ -1091,6 +1135,8 @@ namespace warehouseManagement.Migrations
                     b.Navigation("StockTransferRequestFromWarehouses");
 
                     b.Navigation("StockTransferRequestToWarehouses");
+
+                    b.Navigation("Users");
                 });
 #pragma warning restore 612, 618
         }
