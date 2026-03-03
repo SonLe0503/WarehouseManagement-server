@@ -158,13 +158,15 @@ namespace warehouseManagement.Controllers
                         var item = request.InboundItems.First(i => i.Id == receiveItem.InboundItemId);
 
                         item.ReceivedQuantity = receiveItem.ReceivedQuantity;
-                        if (receiveItem.LineNote != null)
+                        item.StoragePosition = receiveItem.StoragePosition ?? item.StoragePosition;
+                    if (receiveItem.LineNote != null)
                             item.LineNote = receiveItem.LineNote;
 
-                        var inventory = await _context.Inventories
-                         .FirstOrDefaultAsync(inv =>
-                           inv.ProductId == item.ProductId &&
-                           inv.WarehouseId == request.WarehouseId);
+                    var inventory = await _context.Inventories
+                        .FirstOrDefaultAsync(inv =>
+                        inv.ProductId == item.ProductId &&
+                        inv.WarehouseId == request.WarehouseId &&
+                        inv.StoragePosition == receiveItem.StoragePosition);
 
                     if (inventory != null)
                     {
