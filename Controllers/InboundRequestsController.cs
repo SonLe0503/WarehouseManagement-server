@@ -50,7 +50,7 @@ public class InboundRequestsController : ControllerBase
         _context.InboundRequests.Add(request);
         await _context.SaveChangesAsync();
 
-        // ✅ THÊM ĐOẠN NÀY - Tạo InboundItems
+       
         if (dto.Items != null && dto.Items.Any())
         {
             foreach (var itemDto in dto.Items)

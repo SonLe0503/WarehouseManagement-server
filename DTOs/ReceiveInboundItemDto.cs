@@ -9,6 +9,7 @@
     {
         public int InboundItemId { get; set; }
         public decimal ReceivedQuantity { get; set; }
+        public string? StoragePosition { get; set; }
         public string? LineNote { get; set; }
     }
 }

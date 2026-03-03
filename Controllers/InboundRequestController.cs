@@ -132,8 +132,9 @@ namespace warehouseManagement.Controllers
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (request == null) return NotFound("Không tìm thấy đơn nhập kho");
-
-            if (request.Status != "Approved") return BadRequest("Chỉ có thể nhận hàng cho đơn đã được duyệt");
+                
+            if (request.Status != "Approved") 
+                return BadRequest("Chỉ có thể nhận hàng cho đơn đã được duyệt");
 
 
             var itemIds = request.InboundItems.Select(i => i.Id).ToHashSet();
@@ -169,6 +170,7 @@ namespace warehouseManagement.Controllers
                     {
                         inventory.Quantity += receiveItem.ReceivedQuantity;
                         inventory.UpdatedAt = DateTime.UtcNow;
+                        inventory.StoragePosition = receiveItem.StoragePosition ?? inventory.StoragePosition;
                     }
                     else
                     {
@@ -177,6 +179,7 @@ namespace warehouseManagement.Controllers
                             ProductId = item.ProductId,
                             WarehouseId = request.WarehouseId,
                             Quantity = receiveItem.ReceivedQuantity,
+                            StoragePosition = receiveItem.StoragePosition,
                             UpdatedAt = DateTime.UtcNow
                         };
                         _context.Inventories.Add(newInventory);
