@@ -57,7 +57,7 @@ namespace warehouseManagement.Controllers
             return Ok(requestDto);
         }
         [HttpPost("{id}/approval")]
-        [Authorize(Roles = "MANAGER,STAFF")]
+        [Authorize(Roles = "MANAGE,STAFF")]
         public async Task<IActionResult> ApproveOrReject(int id, [FromBody] ApproveOutboundRequestDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
