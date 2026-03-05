@@ -157,11 +157,18 @@ namespace warehouseManagement.Migrations
                     WarehouseId = table.Column<int>(type: "int", nullable: false),
                     Quantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     StoragePosition = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true, defaultValueSql: "(sysdatetime())")
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true, defaultValueSql: "(sysdatetime())"),
+                    UnitId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK__Inventor__3214EC07F523929A", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Inventories_Units_UnitId",
+                        column: x => x.UnitId,
+                        principalTable: "Units",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK__Inventori__Produ__5DCAEF64",
                         column: x => x.ProductId,
@@ -548,15 +555,21 @@ namespace warehouseManagement.Migrations
                 filter: "[RequestNo] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Inventories_UnitId",
+                table: "Inventories",
+                column: "UnitId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Inventories_WarehouseId",
                 table: "Inventories",
                 column: "WarehouseId");
 
             migrationBuilder.CreateIndex(
-                name: "UQ_Product_Warehouse",
+                name: "UQ_Product_Warehouse_Unit_Position",
                 table: "Inventories",
-                columns: new[] { "ProductId", "WarehouseId" },
-                unique: true);
+                columns: new[] { "ProductId", "WarehouseId", "UnitId", "StoragePosition" },
+                unique: true,
+                filter: "[StoragePosition] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OutboundItems_OutboundRequestId",

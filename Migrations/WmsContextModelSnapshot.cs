@@ -250,6 +250,9 @@ namespace warehouseManagement.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("UnitId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
@@ -261,10 +264,13 @@ namespace warehouseManagement.Migrations
                     b.HasKey("Id")
                         .HasName("PK__Inventor__3214EC07F523929A");
 
+                    b.HasIndex("UnitId");
+
                     b.HasIndex("WarehouseId");
 
-                    b.HasIndex(new[] { "ProductId", "WarehouseId" }, "UQ_Product_Warehouse")
-                        .IsUnique();
+                    b.HasIndex(new[] { "ProductId", "WarehouseId", "UnitId", "StoragePosition" }, "UQ_Product_Warehouse_Unit_Position")
+                        .IsUnique()
+                        .HasFilter("[StoragePosition] IS NOT NULL");
 
                     b.ToTable("Inventories");
                 });
@@ -855,6 +861,12 @@ namespace warehouseManagement.Migrations
                         .IsRequired()
                         .HasConstraintName("FK__Inventori__Produ__5DCAEF64");
 
+                    b.HasOne("warehouseManagement.Models.Unit", "Unit")
+                        .WithMany()
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("warehouseManagement.Models.Warehouse", "Warehouse")
                         .WithMany("Inventories")
                         .HasForeignKey("WarehouseId")
@@ -862,6 +874,8 @@ namespace warehouseManagement.Migrations
                         .HasConstraintName("FK__Inventori__Wareh__5EBF139D");
 
                     b.Navigation("Product");
+
+                    b.Navigation("Unit");
 
                     b.Navigation("Warehouse");
                 });

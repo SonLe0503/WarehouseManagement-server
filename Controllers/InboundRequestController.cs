@@ -161,10 +161,12 @@ namespace warehouseManagement.Controllers
                         if (receiveItem.LineNote != null)
                             item.LineNote = receiveItem.LineNote;
 
-                        var inventory = await _context.Inventories
-                         .FirstOrDefaultAsync(inv =>
-                           inv.ProductId == item.ProductId &&
-                           inv.WarehouseId == request.WarehouseId);
+                    var inventory = await _context.Inventories
+                        .FirstOrDefaultAsync(inv =>
+                             inv.ProductId == item.ProductId &&
+                             inv.WarehouseId == request.WarehouseId &&
+                             inv.UnitId == item.UnitId &&
+                             inv.StoragePosition == receiveItem.StoragePosition);
 
                     if (inventory != null)
                     {
@@ -178,9 +180,11 @@ namespace warehouseManagement.Controllers
                         {
                             ProductId = item.ProductId,
                             WarehouseId = request.WarehouseId,
+                            UnitId = item.UnitId,
                             Quantity = receiveItem.ReceivedQuantity,
                             StoragePosition = receiveItem.StoragePosition,
                             UpdatedAt = DateTime.UtcNow
+
                         };
                         _context.Inventories.Add(newInventory);
 
