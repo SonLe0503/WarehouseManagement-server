@@ -146,12 +146,10 @@ public partial class WmsContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__Inventor__3214EC07F523929A");
 
-<<<<<<< HEAD
+
             entity.HasIndex(e => new { e.ProductId, e.WarehouseId, e.UnitId, e.StoragePosition },
     "UQ_Product_Warehouse_Unit_Position").IsUnique();
-=======
-            entity.HasIndex(e => new { e.ProductId, e.WarehouseId, e.StoragePosition }, "UQ_Product_Warehouse_Position").IsUnique();
->>>>>>> 87ccf8e8221055e6b40c1a8ce1cf04ebe12a68b2
+
 
             entity.Property(e => e.Quantity).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.StoragePosition).HasMaxLength(100);
