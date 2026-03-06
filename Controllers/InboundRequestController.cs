@@ -151,15 +151,15 @@ namespace warehouseManagement.Controllers
                 {
                     var item = request.InboundItems.First(i => i.Id == receiveItem.InboundItemId);
 
-                    // Tổng nhận = sum tất cả bins
+                   
                     item.ReceivedQuantity = receiveItem.BinQuantities.Sum(b => b.Quantity);
-                    // StoragePosition lưu bin đầu tiên để tham khảo
+                   
                     item.StoragePosition = receiveItem.BinQuantities.FirstOrDefault()?.StoragePosition;
 
                     if (receiveItem.LineNote != null)
                         item.LineNote = receiveItem.LineNote;
 
-                    // Mỗi bin → 1 inventory record riêng
+                   
                     foreach (var binQty in receiveItem.BinQuantities)
                     {
                         var inventory = await _context.Inventories
