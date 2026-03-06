@@ -121,10 +121,8 @@ namespace warehouseManagement.Controllers
 
         [HttpPost("{id}/receive")]
         [Authorize(Roles = "STAFF,MANAGE")]
-
         public async Task<IActionResult> ReceiveGoods(int id, [FromBody] ReceiveInboundRequestDto dto)
         {
-
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var request = await _context.InboundRequests
@@ -132,85 +130,78 @@ namespace warehouseManagement.Controllers
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (request == null) return NotFound("Không tìm thấy đơn nhập kho");
-                
-            if (request.Status != "Approved") 
-                return BadRequest("Chỉ có thể nhận hàng cho đơn đã được duyệt");
 
+            if (request.Status != "Approved")
+                return BadRequest("Chỉ có thể nhận hàng cho đơn đã được duyệt");
 
             var itemIds = request.InboundItems.Select(i => i.Id).ToHashSet();
             var invalidIds = dto.Items
-            .Where(i => !itemIds.Contains(i.InboundItemId))
-            .Select(i => i.InboundItemId)
-            .ToList();
-
+                .Where(i => !itemIds.Contains(i.InboundItemId))
+                .Select(i => i.InboundItemId)
+                .ToList();
 
             if (invalidIds.Any())
-            {
                 return BadRequest($"Các InboundItemId không hợp lệ: {string.Join(", ", invalidIds)}");
-            }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-   
-                    foreach(var receiveItem in dto.Items)
-                    {
-                        var item = request.InboundItems.First(i => i.Id == receiveItem.InboundItemId);
+                foreach (var receiveItem in dto.Items)
+                {
+                    var item = request.InboundItems.First(i => i.Id == receiveItem.InboundItemId);
 
-                        item.ReceivedQuantity = receiveItem.ReceivedQuantity;
-                        item.StoragePosition = receiveItem.StoragePosition ?? item.StoragePosition;
+                    // Tổng nhận = sum tất cả bins
+                    item.ReceivedQuantity = receiveItem.BinQuantities.Sum(b => b.Quantity);
+                    // StoragePosition lưu bin đầu tiên để tham khảo
+                    item.StoragePosition = receiveItem.BinQuantities.FirstOrDefault()?.StoragePosition;
+
                     if (receiveItem.LineNote != null)
-                            item.LineNote = receiveItem.LineNote;
+                        item.LineNote = receiveItem.LineNote;
 
-                    var inventory = await _context.Inventories
-                        .FirstOrDefaultAsync(inv =>
-
-                             inv.ProductId == item.ProductId &&
-                             inv.WarehouseId == request.WarehouseId &&
-                             inv.UnitId == item.UnitId &&
-                             inv.StoragePosition == receiveItem.StoragePosition);
-
-
-                    if (inventory != null)
+                    // Mỗi bin → 1 inventory record riêng
+                    foreach (var binQty in receiveItem.BinQuantities)
                     {
-                        inventory.Quantity += receiveItem.ReceivedQuantity;
-                        inventory.UpdatedAt = DateTime.UtcNow;
-                        inventory.StoragePosition = receiveItem.StoragePosition ?? inventory.StoragePosition;
-                    }
-                    else
-                    {
-                        var newInventory = new Inventory
+                        var inventory = await _context.Inventories
+                            .FirstOrDefaultAsync(inv =>
+                                inv.ProductId == item.ProductId &&
+                                inv.WarehouseId == request.WarehouseId &&
+                                inv.UnitId == item.UnitId &&
+                                inv.StoragePosition == binQty.StoragePosition);
+
+                        if (inventory != null)
+                        {
+                            inventory.Quantity += binQty.Quantity;
+                            inventory.UpdatedAt = DateTime.UtcNow;
+                        }
+                        else
+                        {
+                            _context.Inventories.Add(new Inventory
+                            {
+                                ProductId = item.ProductId,
+                                WarehouseId = request.WarehouseId,
+                                UnitId = item.UnitId,
+                                Quantity = binQty.Quantity,
+                                StoragePosition = binQty.StoragePosition,
+                                UpdatedAt = DateTime.UtcNow
+                            });
+                        }
+
+                        _context.StockMovements.Add(new StockMovement
                         {
                             ProductId = item.ProductId,
                             WarehouseId = request.WarehouseId,
-                            UnitId = item.UnitId,
-                            Quantity = receiveItem.ReceivedQuantity,
-                            StoragePosition = receiveItem.StoragePosition,
-                            UpdatedAt = DateTime.UtcNow
-
-                        };
-                        _context.Inventories.Add(newInventory);
-
-
+                            QuantityChange = binQty.Quantity,
+                            RefType = "InboundRequest",
+                            RefId = request.Id,
+                            CreatedAt = DateTime.UtcNow
+                        });
                     }
-
-                    var movement = new StockMovement
-                    {
-                        ProductId = item.ProductId,
-                        WarehouseId = request.WarehouseId,
-                        QuantityChange = receiveItem.ReceivedQuantity,
-                        RefType = "InboundRequest",
-                        RefId = request.Id,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    _context.StockMovements.Add(movement);
                 }
-                request.Status = "Completed";
 
+                request.Status = "Completed";
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-
-
 
                 return Ok(new
                 {
@@ -220,10 +211,9 @@ namespace warehouseManagement.Controllers
             }
             catch (Exception ex)
             {
+                await transaction.RollbackAsync();
                 return StatusCode(500, "Lỗi khi xử lý nhận hàng: " + ex.Message);
-
             }
-
         }
     }
 }

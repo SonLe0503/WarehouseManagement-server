@@ -8,8 +8,13 @@
     public class ReceiveInboundItemDto
     {
         public int InboundItemId { get; set; }
-        public decimal ReceivedQuantity { get; set; }
-        public string? StoragePosition { get; set; }
+        public List<BinQuantityDto> BinQuantities { get; set; } = new();
         public string? LineNote { get; set; }
+    }
+
+    public class BinQuantityDto
+    {
+        public string StoragePosition { get; set; } = null!;
+        public decimal Quantity { get; set; }
     }
 }

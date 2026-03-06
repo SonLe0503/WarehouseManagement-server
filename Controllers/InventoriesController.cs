@@ -48,5 +48,18 @@ namespace warehouseManagement.Controllers
             var result = _mapper.Map<InventoryViewDto>(inventory);
             return Ok(result);
         }
+
+        [HttpGet("bins")]
+        public async Task<IActionResult> GetBinsByWarehouse([FromQuery] int warehouseId)
+        {
+            var bins = await _context.Inventories
+                .Where(x => x.WarehouseId == warehouseId && x.StoragePosition != null)
+                .Select(x => x.StoragePosition!)
+                .Distinct()
+                .OrderBy(x => x)
+                .ToListAsync();
+
+            return Ok(bins);
+        }
     }
 }

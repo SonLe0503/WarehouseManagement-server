@@ -23,7 +23,7 @@ namespace warehouseManagement.DTOs
 
         public DateTime? CreatedAt { get; set; }
 
-        public virtual ICollection<OutboundItem> OutboundItems { get; set; } = new List<OutboundItem>();
+        public virtual ICollection<OutboundItemDTO> OutboundItems { get; set; } = new List<OutboundItemDTO>();
 
 
     }

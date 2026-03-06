@@ -57,7 +57,7 @@ namespace warehouseManagement.Controllers
             return Ok(requestDto);
         }
         [HttpPost("{id}/approval")]
-        [Authorize(Roles = "MANAGER,STAFF")]
+        [Authorize(Roles = "MANAGE,STAFF")]
         public async Task<IActionResult> ApproveOrReject(int id, [FromBody] ApproveOutboundRequestDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -116,7 +116,95 @@ namespace warehouseManagement.Controllers
                 return StatusCode(500, "Lỗi khi xử lý duyệt đơn: " + ex.Message);
             }
         }
-}
+        [HttpPost("{id}/ship")]
+        [Authorize(Roles = "STAFF,MANAGE")]
+        public async Task<IActionResult> ShipGoods(int id, [FromBody] PickedInboundRequestDTO dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var request = await _context.OutboundRequests
+                .Include(r => r.OutboundItems)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (request == null)
+                return NotFound("Không tìm thấy đơn xuất kho");
+
+            if (request.Status != "Approved")
+                return BadRequest("Chỉ có thể xuất hàng cho đơn đã được duyệt");
+
+            var itemIds = request.OutboundItems.Select(i => i.Id).ToHashSet();
+            var invalidIds = dto.Items
+                .Where(i => !itemIds.Contains(i.OutboundItemId))
+                .Select(i => i.OutboundItemId)
+                .ToList();
+
+            if (invalidIds.Any())
+                return BadRequest($"Các OutboundItemId không hợp lệ: {string.Join(", ", invalidIds)}");
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                foreach (var shipItem in dto.Items)
+                {
+                    if (shipItem.PickedQuantity <= 0)
+                        return BadRequest("Số lượng xuất phải lớn hơn 0");
+
+                    var item = request.OutboundItems
+                        .First(i => i.Id == shipItem.OutboundItemId);
+
+                    // Tìm tồn kho
+                    var inventory = await _context.Inventories
+                        .FirstOrDefaultAsync(inv =>
+                            inv.ProductId == item.ProductId &&
+                            inv.WarehouseId == request.WarehouseId &&
+                            inv.StoragePosition == shipItem.StoragePosition);
+
+                    if (inventory == null || inventory.Quantity < shipItem.PickedQuantity)
+                        return BadRequest($"Không đủ tồn kho cho sản phẩm {item.ProductId}");
+
+                    // Trừ tồn
+                    inventory.Quantity -= shipItem.PickedQuantity;
+                    inventory.UpdatedAt = DateTime.UtcNow;
+
+                    // Update dòng xuất
+                    item.PickedQuantity += shipItem.PickedQuantity;
+
+                    if (shipItem.LineNote != null)
+                        item.LineNote = shipItem.LineNote;
+
+                    // Ghi lịch sử
+                    var movement = new StockMovement
+                    {
+                        ProductId = item.ProductId,
+                        WarehouseId = request.WarehouseId,
+                        QuantityChange = -shipItem.PickedQuantity,
+                        RefType = "OutboundRequest",
+                        RefId = request.Id,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    _context.StockMovements.Add(movement);
+                }
+                request.Status = "Completed";
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new
+                {
+                    Message = $"Xuất hàng cho đơn {request.RequestNo} thành công.",
+                    NewStatus = request.Status
+                });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, "Lỗi khi xử lý xuất hàng: " + ex.Message);
+            }
+        }
+    }
 
 }
 
