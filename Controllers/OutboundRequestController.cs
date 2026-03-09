@@ -169,7 +169,8 @@ namespace warehouseManagement.Controllers
                     inventory.UpdatedAt = DateTime.UtcNow;
 
                     // Update dòng xuất
-                    item.PickedQuantity += shipItem.PickedQuantity;
+                    item.PickedQuantity  = shipItem.PickedQuantity;
+                    item.StoragePosition = shipItem.StoragePosition ?? item.StoragePosition;
 
                     if (shipItem.LineNote != null)
                         item.LineNote = shipItem.LineNote;
