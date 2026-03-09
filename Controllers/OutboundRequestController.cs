@@ -154,39 +154,47 @@ namespace warehouseManagement.Controllers
                     var item = request.OutboundItems
                         .First(i => i.Id == shipItem.OutboundItemId);
 
-                    // Tìm tồn kho
+                    var product = await _context.Products
+                        .FirstAsync(p => p.Id == item.ProductId);
+
+                    decimal baseQuantity = shipItem.PickedQuantity;
+
+                    if (item.UnitId != product.BaseUnitId)
+                    {
+                        var conversion = await _context.UnitConversions
+                            .FirstOrDefaultAsync(c =>
+                                c.ProductId == item.ProductId &&
+                                c.FromUnitId == item.UnitId &&
+                                c.IsActive);
+
+                        if (conversion == null)
+                            throw new Exception($"Không tìm thấy quy đổi đơn vị cho Product {item.ProductId}");
+
+                        baseQuantity = shipItem.PickedQuantity * conversion.ConversionFactor;
+                    }
+
+
+
                     var inventory = await _context.Inventories
                         .FirstOrDefaultAsync(inv =>
                             inv.ProductId == item.ProductId &&
                             inv.WarehouseId == request.WarehouseId &&
                             inv.StoragePosition == shipItem.StoragePosition);
 
-                    if (inventory == null || inventory.Quantity < shipItem.PickedQuantity)
+                    if (inventory == null || inventory.Quantity < baseQuantity)
                         return BadRequest($"Không đủ tồn kho cho sản phẩm {item.ProductId}");
 
-                    // Trừ tồn
-                    inventory.Quantity -= shipItem.PickedQuantity;
+
+                    inventory.Quantity -= baseQuantity;
                     inventory.UpdatedAt = DateTime.UtcNow;
 
-                    // Update dòng xuất
+
                     item.PickedQuantity  = shipItem.PickedQuantity;
                     item.StoragePosition = shipItem.StoragePosition ?? item.StoragePosition;
 
                     if (shipItem.LineNote != null)
                         item.LineNote = shipItem.LineNote;
 
-                    // Ghi lịch sử
-                    var movement = new StockMovement
-                    {
-                        ProductId = item.ProductId,
-                        WarehouseId = request.WarehouseId,
-                        QuantityChange = -shipItem.PickedQuantity,
-                        RefType = "OutboundRequest",
-                        RefId = request.Id,
-                        CreatedAt = DateTime.UtcNow
-                    };
-
-                    _context.StockMovements.Add(movement);
                 }
                 request.Status = "Completed";
 

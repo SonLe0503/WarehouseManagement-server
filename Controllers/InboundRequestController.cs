@@ -159,6 +159,25 @@ namespace warehouseManagement.Controllers
 
                         item.ReceivedQuantity = receiveItem.ReceivedQuantity;
                         item.StoragePosition = receiveItem.StoragePosition ?? item.StoragePosition;
+                        var product = await _context.Products
+                            .FirstAsync(p => p.Id == item.ProductId);
+
+                        decimal baseQuantity = receiveItem.ReceivedQuantity;
+
+                    if (item.UnitId != product.BaseUnitId)
+                    {
+                        var conversion = await _context.UnitConversions
+                            .FirstOrDefaultAsync(c =>
+                                c.ProductId == item.ProductId &&
+                                c.FromUnitId == item.UnitId &&
+                                c.IsActive);
+
+                        if (conversion == null)
+                            throw new Exception($"Không tìm thấy quy đổi đơn vị cho Product {item.ProductId}");
+
+                        baseQuantity = receiveItem.ReceivedQuantity * conversion.ConversionFactor;
+                    }
+
                     if (receiveItem.LineNote != null)
                             item.LineNote = receiveItem.LineNote;
 
@@ -170,7 +189,7 @@ namespace warehouseManagement.Controllers
 
                     if (inventory != null)
                     {
-                        inventory.Quantity += receiveItem.ReceivedQuantity;
+                        inventory.Quantity += baseQuantity;
                         inventory.UpdatedAt = DateTime.UtcNow;
                         inventory.StoragePosition = receiveItem.StoragePosition ?? inventory.StoragePosition;
                     }
@@ -180,7 +199,7 @@ namespace warehouseManagement.Controllers
                         {
                             ProductId = item.ProductId,
                             WarehouseId = request.WarehouseId,
-                            Quantity = receiveItem.ReceivedQuantity,
+                            Quantity = baseQuantity,
                             StoragePosition = receiveItem.StoragePosition,
                             UpdatedAt = DateTime.UtcNow
                         };
@@ -188,17 +207,6 @@ namespace warehouseManagement.Controllers
 
 
                     }
-
-                    var movement = new StockMovement
-                    {
-                        ProductId = item.ProductId,
-                        WarehouseId = request.WarehouseId,
-                        QuantityChange = receiveItem.ReceivedQuantity,
-                        RefType = "InboundRequest",
-                        RefId = request.Id,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    _context.StockMovements.Add(movement);
                 }
                 request.Status = "Completed";
 
