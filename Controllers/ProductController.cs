@@ -82,6 +82,17 @@ namespace warehouseManagement.Controllers
             if (dto.BaseUnitId.HasValue &&
                 !await _context.Units.AnyAsync(u => u.Id == dto.BaseUnitId))
                 return BadRequest("Unit not found");
+
+            if (dto.BaseUnitId.HasValue && dto.BaseUnitId != product.BaseUnitId)
+            {
+                var hasInventory = await _context.Inventories
+                    .AnyAsync(i => i.ProductId == product.Id && i.Quantity > 0);
+
+                if (hasInventory)
+                {
+                    return BadRequest("Không thể đổi Base Unit khi sản phẩm đã có tồn kho.");
+                }
+            }
             _mapper.Map(dto, product);
             await _context.SaveChangesAsync();
             return NoContent();
