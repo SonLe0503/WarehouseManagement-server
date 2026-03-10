@@ -151,27 +151,42 @@ namespace warehouseManagement.Controllers
                 {
                     var item = request.InboundItems.First(i => i.Id == receiveItem.InboundItemId);
 
-                   
                     item.ReceivedQuantity = receiveItem.BinQuantities.Sum(b => b.Quantity);
-                   
                     item.StoragePosition = receiveItem.BinQuantities.FirstOrDefault()?.StoragePosition;
 
                     if (receiveItem.LineNote != null)
                         item.LineNote = receiveItem.LineNote;
 
-                   
+                    var product = await _context.Products
+                        .FirstAsync(p => p.Id == item.ProductId);
+
                     foreach (var binQty in receiveItem.BinQuantities)
                     {
+                        decimal baseQuantity = binQty.Quantity;
+
+                        if (item.UnitId != product.BaseUnitId)
+                        {
+                            var conversion = await _context.UnitConversions
+                                .FirstOrDefaultAsync(c =>
+                                    c.ProductId == item.ProductId &&
+                                    c.FromUnitId == item.UnitId &&
+                                    c.IsActive);
+
+                            if (conversion == null)
+                                return BadRequest($"Không tìm thấy quy đổi đơn vị cho Product {item.ProductId}");
+
+                            baseQuantity = binQty.Quantity * conversion.ConversionFactor;
+                        }
+
                         var inventory = await _context.Inventories
                             .FirstOrDefaultAsync(inv =>
                                 inv.ProductId == item.ProductId &&
                                 inv.WarehouseId == request.WarehouseId &&
-                                inv.UnitId == item.UnitId &&
                                 inv.StoragePosition == binQty.StoragePosition);
 
                         if (inventory != null)
                         {
-                            inventory.Quantity += binQty.Quantity;
+                            inventory.Quantity += baseQuantity;
                             inventory.UpdatedAt = DateTime.UtcNow;
                         }
                         else
@@ -180,22 +195,12 @@ namespace warehouseManagement.Controllers
                             {
                                 ProductId = item.ProductId,
                                 WarehouseId = request.WarehouseId,
-                                UnitId = item.UnitId,
-                                Quantity = binQty.Quantity,
+                                UnitId = product.BaseUnitId,
+                                Quantity = baseQuantity,
                                 StoragePosition = binQty.StoragePosition,
                                 UpdatedAt = DateTime.UtcNow
                             });
                         }
-
-                        _context.StockMovements.Add(new StockMovement
-                        {
-                            ProductId = item.ProductId,
-                            WarehouseId = request.WarehouseId,
-                            QuantityChange = binQty.Quantity,
-                            RefType = "InboundRequest",
-                            RefId = request.Id,
-                            CreatedAt = DateTime.UtcNow
-                        });
                     }
                 }
 
