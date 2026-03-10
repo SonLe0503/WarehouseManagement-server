@@ -48,6 +48,7 @@ public partial class WmsContext : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<Warehouse> Warehouses { get; set; }
+    public virtual DbSet<Bin> Bins { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) { }
 
@@ -146,11 +147,15 @@ public partial class WmsContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__Inventor__3214EC07F523929A");
 
-            entity.HasIndex(e => new { e.ProductId, e.WarehouseId, e.StoragePosition }, "UQ_Product_Warehouse_Position").IsUnique();
+
+            entity.HasIndex(e => new { e.ProductId, e.WarehouseId, e.StoragePosition },
+    "UQ_Product_Warehouse_Unit_Position").IsUnique();
+
 
             entity.Property(e => e.Quantity).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.StoragePosition).HasMaxLength(100);
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(sysdatetime())");
+
 
             entity.HasOne(d => d.Product).WithMany(p => p.Inventories)
                 .HasForeignKey(d => d.ProductId)
@@ -354,6 +359,20 @@ public partial class WmsContext : DbContext
             entity.HasOne(d => d.Product).WithMany(p => p.UnitConversions)
                 .HasForeignKey(d => d.ProductId)
                 .HasConstraintName("FK_UnitConversions_Product");
+        });
+
+        modelBuilder.Entity<Bin>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.Code, e.WarehouseId }).IsUnique();
+            entity.Property(e => e.Code).HasMaxLength(50);
+            entity.Property(e => e.Name).HasMaxLength(100);
+            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Available");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
+
+            entity.HasOne(d => d.Warehouse).WithMany()
+                .HasForeignKey(d => d.WarehouseId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
         modelBuilder.Entity<User>(entity =>

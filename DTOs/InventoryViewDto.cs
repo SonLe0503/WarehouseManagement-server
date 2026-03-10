@@ -12,5 +12,7 @@
         public decimal Quantity { get; set; }
         public string? StoragePosition { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public string? UnitName { get; set; }
+        public string? UnitCode { get; set; }
     }
 }

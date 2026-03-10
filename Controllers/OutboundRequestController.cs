@@ -159,6 +159,7 @@ namespace warehouseManagement.Controllers
 
                     decimal baseQuantity = shipItem.PickedQuantity;
 
+                    // convert sang base unit nếu cần
                     if (item.UnitId != product.BaseUnitId)
                     {
                         var conversion = await _context.UnitConversions
@@ -168,13 +169,12 @@ namespace warehouseManagement.Controllers
                                 c.IsActive);
 
                         if (conversion == null)
-                            throw new Exception($"Không tìm thấy quy đổi đơn vị cho Product {item.ProductId}");
+                            return BadRequest($"Không tìm thấy quy đổi đơn vị cho Product {item.ProductId}");
 
                         baseQuantity = shipItem.PickedQuantity * conversion.ConversionFactor;
                     }
 
-
-
+                    // tìm tồn kho theo bin
                     var inventory = await _context.Inventories
                         .FirstOrDefaultAsync(inv =>
                             inv.ProductId == item.ProductId &&
@@ -184,17 +184,15 @@ namespace warehouseManagement.Controllers
                     if (inventory == null || inventory.Quantity < baseQuantity)
                         return BadRequest($"Không đủ tồn kho cho sản phẩm {item.ProductId}");
 
-
+                    // trừ tồn
                     inventory.Quantity -= baseQuantity;
                     inventory.UpdatedAt = DateTime.UtcNow;
 
-
-                    item.PickedQuantity  = shipItem.PickedQuantity;
-                    item.StoragePosition = shipItem.StoragePosition ?? item.StoragePosition;
+                    // update outbound item
+                    item.PickedQuantity += shipItem.PickedQuantity;
 
                     if (shipItem.LineNote != null)
                         item.LineNote = shipItem.LineNote;
-
                 }
                 request.Status = "Completed";
 

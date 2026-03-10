@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using warehouseManagement.DTOs;
 using warehouseManagement.Models;
@@ -10,35 +11,26 @@ namespace warehouseManagement.Controllers
     public class InventoriesController : Controller
     {
         private readonly WmsContext _context;
-        public InventoriesController (WmsContext context)
+        private readonly IMapper _mapper;
+        public InventoriesController (WmsContext context , IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var inventories =  await _context.Inventories
-                .Include(x => x.Product)
-                .Include(x => x.Warehouse)
-                .OrderByDescending(x => x.UpdatedAt)
-                .ToListAsync();
+            var inventories = await _context.Inventories
+        .Include(x => x.Product)
+            .ThenInclude(p => p.BaseUnit)
+        .Include(x => x.Warehouse)
+        .OrderByDescending(x => x.UpdatedAt)
+        .ToListAsync();
 
-            var result = inventories.Select(x => new InventoryViewDto
-            {
-                Id = x.Id,
-                ProductId = x.ProductId,
-                ProductName = x.Product?.Name,
-                Sku = x.Product?.Sku,
-                WarehouseId = x.WarehouseId,
-                WarehouseName = x.Warehouse?.Name,
-                WarehouseCode = x.Warehouse?.Code,
-                Quantity = x.Quantity,
-                StoragePosition = x.StoragePosition,
-                UpdatedAt = x.UpdatedAt
-
-            }).ToList();
+            var result = _mapper.Map<List<InventoryViewDto>>(inventories);
             return Ok(result);
+            
         }
 
         [HttpGet("{id}")]
@@ -51,28 +43,23 @@ namespace warehouseManagement.Controllers
                 .FirstOrDefaultAsync(x  => x.Id == id);
 
             if (inventory == null)
-            {
                 return NotFound("Inventory not found");
-            }
-            var result = new InventoryViewDto
-            {
-                Id = inventory.Id,
-                ProductId = inventory.ProductId,
-                ProductName = inventory.Product?.Name,
-                Sku = inventory.Product?.Sku,
-                WarehouseId = inventory.WarehouseId,
-                WarehouseName = inventory.Warehouse?.Name,
-                WarehouseCode = inventory.Warehouse?.Code,
-                Quantity = inventory.Quantity,
-                StoragePosition = inventory.StoragePosition,
-                UpdatedAt = inventory.UpdatedAt
 
-
-            };
-
-           
-
+            var result = _mapper.Map<InventoryViewDto>(inventory);
             return Ok(result);
+        }
+
+        [HttpGet("bins")]
+        public async Task<IActionResult> GetBinsByWarehouse([FromQuery] int warehouseId)
+        {
+            var bins = await _context.Inventories
+                .Where(x => x.WarehouseId == warehouseId && x.StoragePosition != null)
+                .Select(x => x.StoragePosition!)
+                .Distinct()
+                .OrderBy(x => x)
+                .ToListAsync();
+
+            return Ok(bins);
         }
     }
 }
