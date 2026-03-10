@@ -162,44 +162,7 @@ namespace warehouseManagement.Controllers
                         if (binQty.Quantity <= 0)
                             return BadRequest($"Bin {binQty.StoragePosition}: số lượng phải lớn hơn 0");
 
-<<<<<<< HEAD
-                    var product = await _context.Products
-                        .FirstAsync(p => p.Id == item.ProductId);
 
-                    decimal baseQuantity = shipItem.PickedQuantity;
-
-                    // convert sang base unit nếu cần
-                    if (item.UnitId != product.BaseUnitId)
-                    {
-                        var conversion = await _context.UnitConversions
-                            .FirstOrDefaultAsync(c =>
-                                c.ProductId == item.ProductId &&
-                                c.FromUnitId == item.UnitId &&
-                                c.IsActive);
-
-                        if (conversion == null)
-                            return BadRequest($"Không tìm thấy quy đổi đơn vị cho Product {item.ProductId}");
-
-                        baseQuantity = shipItem.PickedQuantity * conversion.ConversionFactor;
-                    }
-
-                    // tìm tồn kho theo bin
-                    var inventory = await _context.Inventories
-                        .FirstOrDefaultAsync(inv =>
-                            inv.ProductId == item.ProductId &&
-                            inv.WarehouseId == request.WarehouseId &&
-                            inv.StoragePosition == shipItem.StoragePosition);
-
-                    if (inventory == null || inventory.Quantity < baseQuantity)
-                        return BadRequest($"Không đủ tồn kho cho sản phẩm {item.ProductId}");
-
-                    // trừ tồn
-                    inventory.Quantity -= baseQuantity;
-                    inventory.UpdatedAt = DateTime.UtcNow;
-
-                    // update outbound item
-                    item.PickedQuantity += shipItem.PickedQuantity;
-=======
                         decimal baseQty = binQty.Quantity;
 
                         if (binQty.UnitId != item.UnitId)
@@ -250,7 +213,7 @@ namespace warehouseManagement.Controllers
                     }
 
                     item.PickedQuantity = (item.PickedQuantity ?? 0) + totalBaseQty;
->>>>>>> a49d0ca ( edit oubound)
+
 
                     if (shipItem.LineNote != null)
                         item.LineNote = shipItem.LineNote;

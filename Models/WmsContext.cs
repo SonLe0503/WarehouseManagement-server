@@ -147,15 +147,11 @@ public partial class WmsContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__Inventor__3214EC07F523929A");
 
-
-            entity.HasIndex(e => new { e.ProductId, e.WarehouseId, e.StoragePosition },
-    "UQ_Product_Warehouse_Unit_Position").IsUnique();
-
+            entity.HasIndex(e => new { e.ProductId, e.WarehouseId, e.StoragePosition }, "UQ_Product_Warehouse_Bin").IsUnique();
 
             entity.Property(e => e.Quantity).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.StoragePosition).HasMaxLength(100);
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(sysdatetime())");
-
 
             entity.HasOne(d => d.Product).WithMany(p => p.Inventories)
                 .HasForeignKey(d => d.ProductId)
@@ -291,6 +287,11 @@ public partial class WmsContext : DbContext
                 .HasForeignKey(d => d.StockTransferRequestId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__StockTran__Stock__02FC7413");
+
+            entity.HasOne(d => d.Unit).WithMany()
+                .HasForeignKey(d => d.UnitId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_StockTransferItems_Unit");
         });
 
         modelBuilder.Entity<StockTransferRequest>(entity =>
@@ -361,20 +362,6 @@ public partial class WmsContext : DbContext
                 .HasConstraintName("FK_UnitConversions_Product");
         });
 
-        modelBuilder.Entity<Bin>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => new { e.Code, e.WarehouseId }).IsUnique();
-            entity.Property(e => e.Code).HasMaxLength(50);
-            entity.Property(e => e.Name).HasMaxLength(100);
-            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Available");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
-
-            entity.HasOne(d => d.Warehouse).WithMany()
-                .HasForeignKey(d => d.WarehouseId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
-        });
-
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Users__3214EC071C4F9126");
@@ -420,6 +407,20 @@ public partial class WmsContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.Name).HasMaxLength(150);
             entity.Property(e => e.Status).HasMaxLength(20);
+        });
+
+        modelBuilder.Entity<Bin>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.Code, e.WarehouseId }).IsUnique();
+            entity.Property(e => e.Code).HasMaxLength(50);
+            entity.Property(e => e.Name).HasMaxLength(100);
+            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Available");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
+
+            entity.HasOne(d => d.Warehouse).WithMany()
+                .HasForeignKey(d => d.WarehouseId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
         OnModelCreatingPartial(modelBuilder);
