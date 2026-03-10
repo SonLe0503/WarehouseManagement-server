@@ -13,8 +13,8 @@ namespace warehouseManagement.Mappers
                 .ForMember(dest => dest.Sku, opt => opt.MapFrom(src => src.Product.Sku))
                 .ForMember(dest => dest.WarehouseName, opt => opt.MapFrom(src => src.Warehouse.Name))
                 .ForMember(dest => dest.WarehouseCode, opt => opt.MapFrom(src => src.Warehouse.Code))
-                .ForMember(dest => dest.UnitName, opt => opt.MapFrom(src => src.Unit.Name))
-                .ForMember(dest => dest.UnitCode, opt => opt.MapFrom(src => src.Unit.Code));
+                .ForMember(dest => dest.UnitName, opt => opt.MapFrom(src => src.Product.BaseUnit.Name))
+                .ForMember(dest => dest.UnitCode, opt => opt.MapFrom(src => src.Product.BaseUnit.Code));
         }
     }
 }

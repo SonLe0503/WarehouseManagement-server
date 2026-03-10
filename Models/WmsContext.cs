@@ -148,7 +148,7 @@ public partial class WmsContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Inventor__3214EC07F523929A");
 
 
-            entity.HasIndex(e => new { e.ProductId, e.WarehouseId, e.UnitId, e.StoragePosition },
+            entity.HasIndex(e => new { e.ProductId, e.WarehouseId, e.StoragePosition },
     "UQ_Product_Warehouse_Unit_Position").IsUnique();
 
 

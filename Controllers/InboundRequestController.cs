@@ -195,7 +195,6 @@ namespace warehouseManagement.Controllers
                             {
                                 ProductId = item.ProductId,
                                 WarehouseId = request.WarehouseId,
-                                UnitId = product.BaseUnitId,
                                 Quantity = baseQuantity,
                                 StoragePosition = binQty.StoragePosition,
                                 UpdatedAt = DateTime.UtcNow

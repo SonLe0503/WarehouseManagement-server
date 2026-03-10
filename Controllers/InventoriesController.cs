@@ -21,12 +21,12 @@ namespace warehouseManagement.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var inventories =  await _context.Inventories
-                .Include(x => x.Product)
-                .Include(x => x.Warehouse)
-                .Include(x => x.Unit)
-                .OrderByDescending(x => x.UpdatedAt)
-                .ToListAsync();
+            var inventories = await _context.Inventories
+        .Include(x => x.Product)
+            .ThenInclude(p => p.BaseUnit)
+        .Include(x => x.Warehouse)
+        .OrderByDescending(x => x.UpdatedAt)
+        .ToListAsync();
 
             var result = _mapper.Map<List<InventoryViewDto>>(inventories);
             return Ok(result);
