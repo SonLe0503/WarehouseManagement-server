@@ -85,5 +85,61 @@ namespace warehouseManagement.Controllers
             return Ok(_mapper.Map<List<StockCountItemDTO>>(items));
         }
 
+        // 5️⃣ Update actual quantity
+        [HttpPut("items/{id}")]
+        public async Task<IActionResult> UpdateActualQuantity(int id, UpdateActualQuantityDTO dto)
+        {
+            var item = await _context.StockCountItems.FindAsync(id);
+
+            if (item == null)
+                return NotFound();
+
+            item.ActualQuantity = dto.ActualQuantity;
+            item.Difference = dto.ActualQuantity - item.SystemQuantity;
+            item.ReasonId = dto.ReasonId;
+            item.Note = dto.Note;
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        // 6️⃣ Approve session
+        [HttpPost("sessions/{id}/approve")]
+        public async Task<IActionResult> ApproveSession(int id)
+        {
+            var session = await _context.StockCountSessions
+                .Include(x => x.Items)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (session == null)
+                return NotFound();
+
+            foreach (var item in session.Items)
+            {
+                if (item.ActualQuantity == null)
+                    continue;
+
+                var inventory = await _context.Inventories
+                    .FirstOrDefaultAsync(x =>
+                        x.ProductId == item.ProductId &&
+                        x.WarehouseId == session.WarehouseId &&
+                        x.StoragePosition == item.StoragePosition);
+
+                if (inventory != null)
+                {
+                    inventory.Quantity = item.ActualQuantity.Value;
+                }
+            }
+
+            session.Status = "Approved";
+            session.ApprovedBy = 1;
+            session.ApprovedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
     }
 }
