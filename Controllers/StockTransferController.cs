@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +8,10 @@ using warehouseManagement.Models;
 
 namespace warehouseManagement.Controllers
 {
+    /// <summary>
+    /// Chuyển bin-to-bin trong cùng 1 kho — tạo xong Status = Completed ngay
+    /// Route: /api/StockTransfer
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(Roles = "MANAGE,STAFF")]
@@ -26,13 +30,12 @@ namespace warehouseManagement.Controllers
         public async Task<IActionResult> GetAll()
         {
             var transfers = await _context.StockTransferRequests
-                .Include(t => t.StockTransferItems)
-                    .ThenInclude(i => i.Product)
-                .Include(t => t.StockTransferItems)
-                    .ThenInclude(i => i.Unit)
+                .Include(t => t.StockTransferItems).ThenInclude(i => i.Product)
+                .Include(t => t.StockTransferItems).ThenInclude(i => i.Unit)
                 .Include(t => t.CreatedByNavigation)
                 .Include(t => t.FromWarehouse)
                 .Include(t => t.ToWarehouse)
+                .Where(t => t.FromWarehouseId == t.ToWarehouseId)
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
 
@@ -43,17 +46,14 @@ namespace warehouseManagement.Controllers
         public async Task<IActionResult> GetById(int id)
         {
             var transfer = await _context.StockTransferRequests
-                .Include(t => t.StockTransferItems)
-                    .ThenInclude(i => i.Product)
-                .Include(t => t.StockTransferItems)
-                    .ThenInclude(i => i.Unit)
+                .Include(t => t.StockTransferItems).ThenInclude(i => i.Product)
+                .Include(t => t.StockTransferItems).ThenInclude(i => i.Unit)
                 .Include(t => t.CreatedByNavigation)
                 .Include(t => t.FromWarehouse)
                 .Include(t => t.ToWarehouse)
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (transfer == null) return NotFound("Không tìm thấy phiếu chuyển bin");
-
             return Ok(_mapper.Map<StockTransferRequestViewDto>(transfer));
         }
 
@@ -61,7 +61,6 @@ namespace warehouseManagement.Controllers
         public async Task<IActionResult> Create([FromBody] StockTransferRequestCreateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-
             if (dto.Items == null || dto.Items.Count == 0)
                 return BadRequest("Phải có ít nhất 1 sản phẩm cần chuyển");
 
@@ -71,16 +70,13 @@ namespace warehouseManagement.Controllers
             if (!int.TryParse(userIdStr, out int currentUserId) || currentUserId == 0)
                 return Unauthorized("Không xác định được người dùng. Vui lòng đăng nhập lại.");
 
-
             var warehouse = await _context.Warehouses.FindAsync(dto.WarehouseId);
             if (warehouse == null) return BadRequest("Kho không tồn tại");
 
-            // Validate từng dòng
             foreach (var item in dto.Items)
             {
                 if (item.FromStoragePosition == item.ToStoragePosition)
                     return BadRequest($"Bin nguồn và bin đích không được trùng nhau (ProductId={item.ProductId})");
-
                 if (item.Quantity <= 0)
                     return BadRequest($"Số lượng phải lớn hơn 0 (ProductId={item.ProductId})");
             }
@@ -89,7 +85,6 @@ namespace warehouseManagement.Controllers
             try
             {
                 var transferNo = await GenerateTransferNoAsync();
-
                 var transfer = new StockTransferRequest
                 {
                     TransferNo = transferNo,
@@ -105,7 +100,6 @@ namespace warehouseManagement.Controllers
 
                 foreach (var itemDto in dto.Items)
                 {
-                    // Tính baseQty (quy đổi về base unit)
                     decimal baseQty = itemDto.Quantity;
                     var product = await _context.Products.FindAsync(itemDto.ProductId);
                     if (product == null)
@@ -118,14 +112,11 @@ namespace warehouseManagement.Controllers
                                 c.ProductId == itemDto.ProductId &&
                                 c.FromUnitId == itemDto.UnitId &&
                                 c.IsActive);
-
                         if (conversion == null)
                             return BadRequest($"Không tìm thấy quy đổi đơn vị cho sản phẩm Id={itemDto.ProductId}");
-
                         baseQty = itemDto.Quantity * conversion.ConversionFactor;
                     }
 
-                    // Kiểm tra tồn kho bin nguồn
                     var fromInventory = await _context.Inventories
                         .FirstOrDefaultAsync(inv =>
                             inv.ProductId == itemDto.ProductId &&
@@ -134,15 +125,12 @@ namespace warehouseManagement.Controllers
 
                     if (fromInventory == null)
                         return BadRequest($"Bin '{itemDto.FromStoragePosition}': không có tồn kho cho sản phẩm Id={itemDto.ProductId}");
-
                     if (fromInventory.Quantity < baseQty)
                         return BadRequest($"Bin '{itemDto.FromStoragePosition}': không đủ tồn (cần {baseQty}, còn {fromInventory.Quantity})");
 
-                    // Trừ tồn kho bin nguồn
                     fromInventory.Quantity -= baseQty;
                     fromInventory.UpdatedAt = DateTime.UtcNow;
 
-                    // Cộng tồn kho bin đích
                     var toInventory = await _context.Inventories
                         .FirstOrDefaultAsync(inv =>
                             inv.ProductId == itemDto.ProductId &&
@@ -166,7 +154,6 @@ namespace warehouseManagement.Controllers
                         });
                     }
 
-                    // Ghi StockMovement trừ từ bin nguồn
                     _context.StockMovements.Add(new StockMovement
                     {
                         ProductId = itemDto.ProductId,
@@ -177,8 +164,6 @@ namespace warehouseManagement.Controllers
                         RefId = transfer.Id,
                         CreatedAt = DateTime.UtcNow,
                     });
-
-                    // Ghi StockMovement cộng vào bin đích
                     _context.StockMovements.Add(new StockMovement
                     {
                         ProductId = itemDto.ProductId,
@@ -190,7 +175,6 @@ namespace warehouseManagement.Controllers
                         CreatedAt = DateTime.UtcNow,
                     });
 
-                    // Lưu StockTransferItem
                     _context.StockTransferItems.Add(new StockTransferItem
                     {
                         StockTransferRequestId = transfer.Id,
@@ -209,7 +193,7 @@ namespace warehouseManagement.Controllers
 
                 return Ok(new
                 {
-                    Message = $"Chuyển bin thành công",
+                    Message = "Chuyển bin thành công",
                     TransferNo = transferNo,
                     TransferId = transfer.Id,
                 });
@@ -238,7 +222,6 @@ namespace warehouseManagement.Controllers
                 if (parts.Length == 3 && int.TryParse(parts[2], out int last))
                     seq = last + 1;
             }
-
             return $"{prefix}{seq:D3}";
         }
     }
