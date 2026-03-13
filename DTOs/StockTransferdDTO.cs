@@ -2,7 +2,10 @@
 
 namespace warehouseManagement.DTOs
 {
-    public class StockTransferItemViewDto
+    // DTO cho luồng bin-to-bin (cùng kho)
+    // Đặt tên có prefix "BinTransfer" để tránh conflict Swagger với DTOs.StockTransferRequests
+
+    public class BinTransferItemViewDto
     {
         public int Id { get; set; }
         public int ProductId { get; set; }
@@ -18,7 +21,7 @@ namespace warehouseManagement.DTOs
         public string? LineNote { get; set; }
     }
 
-    public class StockTransferRequestViewDto
+    public class BinTransferRequestViewDto
     {
         public int Id { get; set; }
         public string TransferNo { get; set; } = null!;
@@ -31,10 +34,10 @@ namespace warehouseManagement.DTOs
         public int CreatedBy { get; set; }
         public string? CreatedByUsername { get; set; }
         public DateTime? CreatedAt { get; set; }
-        public List<StockTransferItemViewDto> StockTransferItems { get; set; } = new();
+        public List<BinTransferItemViewDto> StockTransferItems { get; set; } = new();
     }
 
-    public class StockTransferItemCreateDto
+    public class BinTransferItemCreateDto
     {
         [JsonPropertyName("productId")]
         public int ProductId { get; set; }
@@ -50,13 +53,13 @@ namespace warehouseManagement.DTOs
         public string? LineNote { get; set; }
     }
 
-    public class StockTransferRequestCreateDto
+    public class BinTransferRequestCreateDto
     {
         [JsonPropertyName("warehouseId")]
         public int WarehouseId { get; set; }
         [JsonPropertyName("note")]
         public string? Note { get; set; }
         [JsonPropertyName("items")]
-        public List<StockTransferItemCreateDto> Items { get; set; } = new();
+        public List<BinTransferItemCreateDto> Items { get; set; } = new();
     }
 }

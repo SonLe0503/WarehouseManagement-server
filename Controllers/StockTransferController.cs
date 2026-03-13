@@ -8,10 +8,7 @@ using warehouseManagement.Models;
 
 namespace warehouseManagement.Controllers
 {
-    /// <summary>
-    /// Chuyển bin-to-bin trong cùng 1 kho — tạo xong Status = Completed ngay
-    /// Route: /api/StockTransfer
-    /// </summary>
+
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(Roles = "MANAGE,STAFF")]
@@ -39,7 +36,7 @@ namespace warehouseManagement.Controllers
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
 
-            return Ok(_mapper.Map<List<StockTransferRequestViewDto>>(transfers));
+            return Ok(_mapper.Map<List<BinTransferRequestViewDto>>(transfers));
         }
 
         [HttpGet("{id}")]
@@ -54,11 +51,11 @@ namespace warehouseManagement.Controllers
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (transfer == null) return NotFound("Không tìm thấy phiếu chuyển bin");
-            return Ok(_mapper.Map<StockTransferRequestViewDto>(transfer));
+            return Ok(_mapper.Map<BinTransferRequestViewDto>(transfer));
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] StockTransferRequestCreateDto dto)
+        public async Task<IActionResult> Create([FromBody] BinTransferRequestCreateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             if (dto.Items == null || dto.Items.Count == 0)

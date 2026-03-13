@@ -10,13 +10,13 @@ namespace warehouseManagement.Mappers
         public StockTransferProfile()
         {
             // ─── Bin-to-bin (cùng kho) ────────────────────────────────────────────
-            CreateMap<StockTransferItem, StockTransferItemViewDto>()
+            CreateMap<StockTransferItem, BinTransferItemViewDto>()
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
                 .ForMember(dest => dest.ProductSku, opt => opt.MapFrom(src => src.Product.Sku))
                 .ForMember(dest => dest.UnitName, opt => opt.MapFrom(src => src.Unit.Name))
                 .ForMember(dest => dest.UnitCode, opt => opt.MapFrom(src => src.Unit.Code));
 
-            CreateMap<StockTransferRequest, StockTransferRequestViewDto>()
+            CreateMap<StockTransferRequest, BinTransferRequestViewDto>()
                 .ForMember(dest => dest.FromWarehouseName, opt => opt.MapFrom(src => src.FromWarehouse.Name))
                 .ForMember(dest => dest.ToWarehouseName, opt => opt.MapFrom(src => src.ToWarehouse.Name))
                 .ForMember(dest => dest.CreatedByUsername,
@@ -24,7 +24,9 @@ namespace warehouseManagement.Mappers
 
             // ─── Cross-warehouse (khác kho) ───────────────────────────────────────
             CreateMap<StockTransferItem, StockTransferItemDetailDto>()
-                .ForMember(dest => dest.Product, opt => opt.MapFrom(src => src.Product));
+                .ForMember(dest => dest.Product, opt => opt.MapFrom(src => src.Product))
+                .ForMember(dest => dest.UnitName, opt => opt.MapFrom(src => src.Unit != null ? src.Unit.Name : null))
+                .ForMember(dest => dest.UnitCode, opt => opt.MapFrom(src => src.Unit != null ? src.Unit.Code : null));
 
             CreateMap<StockTransferRequest, StockTransferViewDto>()
                 .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.StockTransferItems))

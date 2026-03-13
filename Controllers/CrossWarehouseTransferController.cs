@@ -30,11 +30,12 @@ namespace warehouseManagement.Controllers
         {
             var requests = await _context.StockTransferRequests
                 .Include(r => r.StockTransferItems).ThenInclude(i => i.Product)
+                .Include(r => r.StockTransferItems).ThenInclude(i => i.Unit)
                 .Include(r => r.CreatedByNavigation)
                 .Include(r => r.ApprovedByNavigation)
                 .Include(r => r.FromWarehouse)
                 .Include(r => r.ToWarehouse)
-                .Where(r => r.FromWarehouseId != r.ToWarehouseId) 
+                .Where(r => r.FromWarehouseId != r.ToWarehouseId) // chỉ lấy cross-warehouse
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
 
@@ -47,6 +48,7 @@ namespace warehouseManagement.Controllers
             var request = await _context.StockTransferRequests
                 .Include(r => r.StockTransferItems).ThenInclude(i => i.Product).ThenInclude(p => p.BaseUnit)
                 .Include(r => r.StockTransferItems).ThenInclude(i => i.Product).ThenInclude(p => p.Category)
+                .Include(r => r.StockTransferItems).ThenInclude(i => i.Unit)
                 .Include(r => r.CreatedByNavigation)
                 .Include(r => r.ApprovedByNavigation)
                 .Include(r => r.FromWarehouse)
@@ -101,11 +103,18 @@ namespace warehouseManagement.Controllers
 
             foreach (var item in dto.Items)
             {
+                var product = await _context.Products.FindAsync(item.ProductId);
+                if (product == null)
+                    return BadRequest($"Không tìm thấy sản phẩm Id={item.ProductId}");
+
+                // Nếu FE không truyền UnitId thì dùng BaseUnitId
+                int resolvedUnitId = item.UnitId > 0 ? item.UnitId : product.BaseUnitId;
+
                 _context.StockTransferItems.Add(new StockTransferItem
                 {
                     StockTransferRequestId = transfer.Id,
                     ProductId = item.ProductId,
-                    UnitId = 0, // cross-warehouse không dùng UnitId ở bước tạo
+                    UnitId = resolvedUnitId,
                     Quantity = item.Quantity,
                     LineNote = item.LineNote,
                 });
