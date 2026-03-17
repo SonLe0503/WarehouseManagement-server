@@ -49,6 +49,11 @@ public partial class WmsContext : DbContext
 
     public virtual DbSet<Warehouse> Warehouses { get; set; }
     public virtual DbSet<Bin> Bins { get; set; }
+    public DbSet<StockCountSession> StockCountSessions { get; set; }
+
+    public DbSet<StockCountItem> StockCountItems { get; set; }
+
+    public DbSet<AdjustmentReason> AdjustmentReasons { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) { }
 
@@ -407,6 +412,93 @@ public partial class WmsContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.Name).HasMaxLength(150);
             entity.Property(e => e.Status).HasMaxLength(20);
+        });
+        modelBuilder.Entity<StockCountSession>(entity =>
+        {
+            entity.ToTable("StockCountSessions");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.CountNo)
+                .HasMaxLength(50);
+
+            entity.HasIndex(e => e.CountNo)
+                .IsUnique();
+
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsRequired();
+
+            entity.Property(e => e.Note)
+                .HasMaxLength(255);
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("SYSDATETIME()");
+
+            entity.HasOne(e => e.Warehouse)
+                .WithMany()
+                .HasForeignKey(e => e.WarehouseId);
+
+            entity.HasOne(e => e.CreatedUser)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovedUser)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<StockCountItem>(entity =>
+        {
+            entity.ToTable("StockCountItems");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.StoragePosition)
+                .HasMaxLength(100);
+
+            entity.Property(e => e.SystemQuantity)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.ActualQuantity)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.Difference)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.Note)
+                .HasMaxLength(255);
+
+            entity.HasOne(e => e.Session)
+                .WithMany(s => s.Items)
+                .HasForeignKey(e => e.StockCountSessionId);
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId);
+
+            entity.HasOne(e => e.Reason)
+                .WithMany(r => r.StockCountItems)
+                .HasForeignKey(e => e.ReasonId);
+            entity.HasIndex(e => new
+            {
+                e.StockCountSessionId,
+                e.ProductId,
+                e.StoragePosition
+            }).IsUnique();
+        });
+        modelBuilder.Entity<AdjustmentReason>(entity =>
+        {
+            entity.ToTable("AdjustmentReasons");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Code)
+                .HasMaxLength(50);
+
+            entity.Property(e => e.Name)
+                .HasMaxLength(100);
         });
 
         modelBuilder.Entity<Bin>(entity =>
