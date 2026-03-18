@@ -20,6 +20,7 @@
         public string Sku { get; set; } = null!;
         public string Name { get; set; } = null!;
         public string CategoryName { get; set; } = null!;
+        public int BaseUnitId { get; set; }
         public string BaseUnitCode { get; set; } = null!;
         public string? Status { get; set; }
         public DateTime? CreatedAt { get; set; }

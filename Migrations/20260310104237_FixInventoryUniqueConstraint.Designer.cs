@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using warehouseManagement.Models;
 
@@ -11,9 +12,11 @@ using warehouseManagement.Models;
 namespace warehouseManagement.Migrations
 {
     [DbContext(typeof(WmsContext))]
-    partial class WmsContextModelSnapshot : ModelSnapshot
+    [Migration("20260310104237_FixInventoryUniqueConstraint")]
+    partial class FixInventoryUniqueConstraint
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -36,29 +39,6 @@ namespace warehouseManagement.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("UserRoles", (string)null);
-                });
-
-            modelBuilder.Entity("warehouseManagement.Models.AdjustmentReason", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("AdjustmentReasons", (string)null);
                 });
 
             modelBuilder.Entity("warehouseManagement.Models.Approval", b =>
@@ -499,106 +479,6 @@ namespace warehouseManagement.Migrations
                         .IsUnique();
 
                     b.ToTable("Roles");
-                });
-
-            modelBuilder.Entity("warehouseManagement.Models.StockCountItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal?>("ActualQuantity")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("Difference")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ReasonId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StockCountSessionId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("StoragePosition")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<decimal>("SystemQuantity")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("ReasonId");
-
-                    b.HasIndex("StockCountSessionId", "ProductId", "StoragePosition")
-                        .IsUnique()
-                        .HasFilter("[StoragePosition] IS NOT NULL");
-
-                    b.ToTable("StockCountItems", (string)null);
-                });
-
-            modelBuilder.Entity("warehouseManagement.Models.StockCountSession", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime?>("ApprovedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("ApprovedBy")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CountNo")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("SYSDATETIME()");
-
-                    b.Property<int>("CreatedBy")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<int>("WarehouseId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApprovedBy");
-
-                    b.HasIndex("CountNo")
-                        .IsUnique();
-
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("WarehouseId");
-
-                    b.ToTable("StockCountSessions", (string)null);
                 });
 
             modelBuilder.Entity("warehouseManagement.Models.StockMovement", b =>
@@ -1118,57 +998,6 @@ namespace warehouseManagement.Migrations
                     b.Navigation("Category");
                 });
 
-            modelBuilder.Entity("warehouseManagement.Models.StockCountItem", b =>
-                {
-                    b.HasOne("warehouseManagement.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("warehouseManagement.Models.AdjustmentReason", "Reason")
-                        .WithMany("StockCountItems")
-                        .HasForeignKey("ReasonId");
-
-                    b.HasOne("warehouseManagement.Models.StockCountSession", "Session")
-                        .WithMany("Items")
-                        .HasForeignKey("StockCountSessionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-
-                    b.Navigation("Reason");
-
-                    b.Navigation("Session");
-                });
-
-            modelBuilder.Entity("warehouseManagement.Models.StockCountSession", b =>
-                {
-                    b.HasOne("warehouseManagement.Models.User", "ApprovedUser")
-                        .WithMany()
-                        .HasForeignKey("ApprovedBy")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("warehouseManagement.Models.User", "CreatedUser")
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("warehouseManagement.Models.Warehouse", "Warehouse")
-                        .WithMany()
-                        .HasForeignKey("WarehouseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ApprovedUser");
-
-                    b.Navigation("CreatedUser");
-
-                    b.Navigation("Warehouse");
-                });
-
             modelBuilder.Entity("warehouseManagement.Models.StockMovement", b =>
                 {
                     b.HasOne("warehouseManagement.Models.Product", "Product")
@@ -1287,11 +1116,6 @@ namespace warehouseManagement.Migrations
                     b.Navigation("Warehouse");
                 });
 
-            modelBuilder.Entity("warehouseManagement.Models.AdjustmentReason", b =>
-                {
-                    b.Navigation("StockCountItems");
-                });
-
             modelBuilder.Entity("warehouseManagement.Models.Approval", b =>
                 {
                     b.Navigation("ApprovalLogs");
@@ -1327,11 +1151,6 @@ namespace warehouseManagement.Migrations
                     b.Navigation("StockTransferItems");
 
                     b.Navigation("UnitConversions");
-                });
-
-            modelBuilder.Entity("warehouseManagement.Models.StockCountSession", b =>
-                {
-                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("warehouseManagement.Models.StockTransferRequest", b =>
