@@ -14,9 +14,8 @@ namespace warehouseManagement.Controllers
     {
         private readonly WmsContext _context;
         private readonly IMapper _mapper;
-    
 
-    public OutboundRequestController(WmsContext context, IMapper mapper)
+        public OutboundRequestController(WmsContext context, IMapper mapper)
         {
             _context = context;
             _mapper = mapper;
@@ -49,13 +48,12 @@ namespace warehouseManagement.Controllers
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (request == null)
-            {
                 return NotFound();
-            }
 
             var requestDto = _mapper.Map<OutboundRequestDTO>(request);
             return Ok(requestDto);
         }
+
         [HttpPost("{id}/approval")]
         [Authorize(Roles = "MANAGE,STAFF")]
         public async Task<IActionResult> ApproveOrReject(int id, [FromBody] ApproveOutboundRequestDTO dto)
@@ -65,7 +63,7 @@ namespace warehouseManagement.Controllers
             var request = await _context.OutboundRequests
                 .FirstOrDefaultAsync(r => r.Id == id);
 
-            if (request == null) return NotFound("Không tìm thấy đơn nhập kho");
+            if (request == null) return NotFound("Không tìm thấy đơn xuất kho");
 
             var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
@@ -83,12 +81,10 @@ namespace warehouseManagement.Controllers
                 {
                     request.Status = "Approved";
                     request.ApprovedBy = currentUserId;
-                    //request.ApprovedAt = DateTime.UtcNow;
                 }
-                else 
+                else
                 {
                     request.Status = "Rejected";
-                    //request.RejectedReason = dto.RejectReason;
                 }
 
                 var log = new ApprovalLog
@@ -112,10 +108,10 @@ namespace warehouseManagement.Controllers
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                // Log lỗi nếu cần
                 return StatusCode(500, "Lỗi khi xử lý duyệt đơn: " + ex.Message);
             }
         }
+
         [HttpPost("{id}/ship")]
         [Authorize(Roles = "STAFF,MANAGE")]
         public async Task<IActionResult> ShipGoods(int id, [FromBody] PickedInboundRequestDTO dto)
@@ -142,58 +138,87 @@ namespace warehouseManagement.Controllers
             if (invalidIds.Any())
                 return BadRequest($"Các OutboundItemId không hợp lệ: {string.Join(", ", invalidIds)}");
 
+            foreach (var shipItem in dto.Items)
+            {
+                if (shipItem.BinQuantities == null || shipItem.BinQuantities.Count == 0)
+                    return BadRequest($"OutboundItemId {shipItem.OutboundItemId}: phải có ít nhất 1 bin");
+
+                var binPositions = shipItem.BinQuantities.Select(b => b.StoragePosition).ToList();
+                if (binPositions.Count != binPositions.Distinct().Count())
+                    return BadRequest($"OutboundItemId {shipItem.OutboundItemId}: có bin bị trùng");
+            }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
                 foreach (var shipItem in dto.Items)
                 {
-                    if (shipItem.PickedQuantity <= 0)
-                        return BadRequest("Số lượng xuất phải lớn hơn 0");
+                    var item = request.OutboundItems.First(i => i.Id == shipItem.OutboundItemId);
+                    decimal totalBaseQty = 0;
 
-                    var item = request.OutboundItems
-                        .First(i => i.Id == shipItem.OutboundItemId);
-
-                    var product = await _context.Products
-                        .FirstAsync(p => p.Id == item.ProductId);
-
-                    decimal baseQuantity = shipItem.PickedQuantity;
-
-                    // convert sang base unit nếu cần
-                    if (item.UnitId != product.BaseUnitId)
+                    foreach (var binQty in shipItem.BinQuantities)
                     {
-                        var conversion = await _context.UnitConversions
-                            .FirstOrDefaultAsync(c =>
-                                c.ProductId == item.ProductId &&
-                                c.FromUnitId == item.UnitId &&
-                                c.IsActive);
+                        if (binQty.Quantity <= 0)
+                            return BadRequest($"Bin {binQty.StoragePosition}: số lượng phải lớn hơn 0");
 
-                        if (conversion == null)
-                            return BadRequest($"Không tìm thấy quy đổi đơn vị cho Product {item.ProductId}");
 
-                        baseQuantity = shipItem.PickedQuantity * conversion.ConversionFactor;
+                        decimal baseQty = binQty.Quantity;
+
+                        if (binQty.UnitId != item.UnitId)
+                        {
+                            var conversion = await _context.UnitConversions
+                                .FirstOrDefaultAsync(uc =>
+                                    uc.ProductId == item.ProductId &&
+                                    uc.FromUnitId == binQty.UnitId &&
+                                    uc.IsActive);
+
+                            if (conversion == null)
+                                return BadRequest(
+                                    $"Bin {binQty.StoragePosition}: không tìm thấy quy đổi đơn vị " +
+                                    $"(ProductId={item.ProductId}, UnitId={binQty.UnitId})");
+
+                            baseQty = binQty.Quantity * conversion.ConversionFactor;
+                        }
+
+                        var inventory = await _context.Inventories
+                            .FirstOrDefaultAsync(inv =>
+                                inv.ProductId == item.ProductId &&
+                                inv.WarehouseId == request.WarehouseId &&
+                                inv.StoragePosition == binQty.StoragePosition);
+
+                        if (inventory == null)
+                            return BadRequest(
+                                $"Bin {binQty.StoragePosition}: không tìm thấy tồn kho " +
+                                $"cho sản phẩm {item.ProductId}");
+
+                        if (inventory.Quantity < baseQty)
+                            return BadRequest(
+                                $"Bin {binQty.StoragePosition}: không đủ tồn kho " +
+                                $"(cần {baseQty}, còn {inventory.Quantity})");
+
+                        inventory.Quantity -= baseQty;
+                        inventory.UpdatedAt = DateTime.UtcNow;
+                        totalBaseQty += baseQty;
+
+                        _context.StockMovements.Add(new StockMovement
+                        {
+                            ProductId = item.ProductId,
+                            WarehouseId = request.WarehouseId,
+                            QuantityChange = -baseQty,
+                            RefType = "OutboundRequest",
+                            RefId = request.Id,
+                            CreatedAt = DateTime.UtcNow
+                        });
                     }
 
-                    // tìm tồn kho theo bin
-                    var inventory = await _context.Inventories
-                        .FirstOrDefaultAsync(inv =>
-                            inv.ProductId == item.ProductId &&
-                            inv.WarehouseId == request.WarehouseId &&
-                            inv.StoragePosition == shipItem.StoragePosition);
+                    item.PickedQuantity = (item.PickedQuantity ?? 0) + totalBaseQty;
 
-                    if (inventory == null || inventory.Quantity < baseQuantity)
-                        return BadRequest($"Không đủ tồn kho cho sản phẩm {item.ProductId}");
-
-                    // trừ tồn
-                    inventory.Quantity -= baseQuantity;
-                    inventory.UpdatedAt = DateTime.UtcNow;
-
-                    // update outbound item
-                    item.PickedQuantity += shipItem.PickedQuantity;
 
                     if (shipItem.LineNote != null)
                         item.LineNote = shipItem.LineNote;
                 }
+
                 request.Status = "Completed";
 
                 await _context.SaveChangesAsync();
@@ -212,6 +237,4 @@ namespace warehouseManagement.Controllers
             }
         }
     }
-
 }
-

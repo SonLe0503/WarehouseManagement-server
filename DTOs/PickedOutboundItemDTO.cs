@@ -2,14 +2,20 @@
 {
     public class PickedInboundRequestDTO
     {
-        public List<PickedInboundItemDTO> Items { get; set; } = new();
+        public List<PickedOutboundItemDTO> Items { get; set; } = new();
     }
 
-    public class PickedInboundItemDTO
+    public class PickedOutboundItemDTO
     {
         public int OutboundItemId { get; set; }
-        public decimal PickedQuantity { get; set; }
-        public string? StoragePosition { get; set; }
+        public List<ShipBinQuantityDto> BinQuantities { get; set; } = new();
         public string? LineNote { get; set; }
+    }
+
+    public class ShipBinQuantityDto
+    {
+        public string StoragePosition { get; set; } = null!;
+        public int UnitId { get; set; }
+        public decimal Quantity { get; set; }
     }
 }

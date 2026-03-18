@@ -143,6 +143,19 @@ namespace warehouseManagement.Controllers
             if (invalidIds.Any())
                 return BadRequest($"Các InboundItemId không hợp lệ: {string.Join(", ", invalidIds)}");
 
+            // ✅ Validate tổng bins = TotalReceivedQuantity
+            foreach (var receiveItem in dto.Items)
+            {
+                if (receiveItem.BinQuantities == null || receiveItem.BinQuantities.Count == 0)
+                    return BadRequest($"InboundItemId {receiveItem.InboundItemId}: Phải có ít nhất 1 bin");
+
+                var totalBins = receiveItem.BinQuantities.Sum(b => b.Quantity);
+                if (totalBins != receiveItem.TotalReceivedQuantity)
+                    return BadRequest(
+                        $"InboundItemId {receiveItem.InboundItemId}: " +
+                        $"Tổng SL bins ({totalBins}) phải bằng SL thực nhận ({receiveItem.TotalReceivedQuantity})");
+            }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
@@ -151,7 +164,7 @@ namespace warehouseManagement.Controllers
                 {
                     var item = request.InboundItems.First(i => i.Id == receiveItem.InboundItemId);
 
-                    item.ReceivedQuantity = receiveItem.BinQuantities.Sum(b => b.Quantity);
+                    item.ReceivedQuantity = receiveItem.TotalReceivedQuantity;
                     item.StoragePosition = receiveItem.BinQuantities.FirstOrDefault()?.StoragePosition;
 
                     if (receiveItem.LineNote != null)
