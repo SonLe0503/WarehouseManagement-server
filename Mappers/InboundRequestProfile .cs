@@ -10,11 +10,11 @@ namespace WarehouseManagement.Mappers
     {
         public InboundRequestProfile()
         {
-            // Create mappings
+     
             CreateMap<InboundRequestCreateDto, InboundRequest>();
             CreateMap<InboundRequestItemCreateDto, InboundItem>();
 
-            // View mappings
+          
             CreateMap<InboundRequest, InboundRequestViewDto>()
                 .ForMember(
                     dest => dest.Items,

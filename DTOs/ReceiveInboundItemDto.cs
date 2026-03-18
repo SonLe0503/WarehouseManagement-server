@@ -8,6 +8,7 @@
     public class ReceiveInboundItemDto
     {
         public int InboundItemId { get; set; }
+        public decimal TotalReceivedQuantity { get; set; }
         public List<BinQuantityDto> BinQuantities { get; set; } = new();
         public string? LineNote { get; set; }
     }

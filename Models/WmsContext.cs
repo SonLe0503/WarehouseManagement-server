@@ -49,6 +49,11 @@ public partial class WmsContext : DbContext
 
     public virtual DbSet<Warehouse> Warehouses { get; set; }
     public virtual DbSet<Bin> Bins { get; set; }
+    public DbSet<StockCountSession> StockCountSessions { get; set; }
+
+    public DbSet<StockCountItem> StockCountItems { get; set; }
+
+    public DbSet<AdjustmentReason> AdjustmentReasons { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) { }
 
@@ -147,15 +152,11 @@ public partial class WmsContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__Inventor__3214EC07F523929A");
 
-
-            entity.HasIndex(e => new { e.ProductId, e.WarehouseId, e.StoragePosition },
-    "UQ_Product_Warehouse_Unit_Position").IsUnique();
-
+            entity.HasIndex(e => new { e.ProductId, e.WarehouseId, e.StoragePosition }, "UQ_Product_Warehouse_Bin").IsUnique();
 
             entity.Property(e => e.Quantity).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.StoragePosition).HasMaxLength(100);
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(sysdatetime())");
-
 
             entity.HasOne(d => d.Product).WithMany(p => p.Inventories)
                 .HasForeignKey(d => d.ProductId)
@@ -291,6 +292,11 @@ public partial class WmsContext : DbContext
                 .HasForeignKey(d => d.StockTransferRequestId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__StockTran__Stock__02FC7413");
+
+            entity.HasOne(d => d.Unit).WithMany()
+                .HasForeignKey(d => d.UnitId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_StockTransferItems_Unit");
         });
 
         modelBuilder.Entity<StockTransferRequest>(entity =>
@@ -361,20 +367,6 @@ public partial class WmsContext : DbContext
                 .HasConstraintName("FK_UnitConversions_Product");
         });
 
-        modelBuilder.Entity<Bin>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => new { e.Code, e.WarehouseId }).IsUnique();
-            entity.Property(e => e.Code).HasMaxLength(50);
-            entity.Property(e => e.Name).HasMaxLength(100);
-            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Available");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
-
-            entity.HasOne(d => d.Warehouse).WithMany()
-                .HasForeignKey(d => d.WarehouseId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
-        });
-
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Users__3214EC071C4F9126");
@@ -420,6 +412,107 @@ public partial class WmsContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.Name).HasMaxLength(150);
             entity.Property(e => e.Status).HasMaxLength(20);
+        });
+        modelBuilder.Entity<StockCountSession>(entity =>
+        {
+            entity.ToTable("StockCountSessions");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.CountNo)
+                .HasMaxLength(50);
+
+            entity.HasIndex(e => e.CountNo)
+                .IsUnique();
+
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsRequired();
+
+            entity.Property(e => e.Note)
+                .HasMaxLength(255);
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("SYSDATETIME()");
+
+            entity.HasOne(e => e.Warehouse)
+                .WithMany()
+                .HasForeignKey(e => e.WarehouseId);
+
+            entity.HasOne(e => e.CreatedUser)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovedUser)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<StockCountItem>(entity =>
+        {
+            entity.ToTable("StockCountItems");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.StoragePosition)
+                .HasMaxLength(100);
+
+            entity.Property(e => e.SystemQuantity)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.ActualQuantity)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.Difference)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.Note)
+                .HasMaxLength(255);
+
+            entity.HasOne(e => e.Session)
+                .WithMany(s => s.Items)
+                .HasForeignKey(e => e.StockCountSessionId);
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId);
+
+            entity.HasOne(e => e.Reason)
+                .WithMany(r => r.StockCountItems)
+                .HasForeignKey(e => e.ReasonId);
+            entity.HasIndex(e => new
+            {
+                e.StockCountSessionId,
+                e.ProductId,
+                e.StoragePosition
+            }).IsUnique();
+        });
+        modelBuilder.Entity<AdjustmentReason>(entity =>
+        {
+            entity.ToTable("AdjustmentReasons");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Code)
+                .HasMaxLength(50);
+
+            entity.Property(e => e.Name)
+                .HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<Bin>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.Code, e.WarehouseId }).IsUnique();
+            entity.Property(e => e.Code).HasMaxLength(50);
+            entity.Property(e => e.Name).HasMaxLength(100);
+            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Available");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
+
+            entity.HasOne(d => d.Warehouse).WithMany()
+                .HasForeignKey(d => d.WarehouseId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
         OnModelCreatingPartial(modelBuilder);
