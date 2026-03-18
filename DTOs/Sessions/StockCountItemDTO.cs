@@ -17,5 +17,8 @@
         public int? ReasonId { get; set; }
 
         public string? Note { get; set; }
+
+        public int? BaseUnitId { get; set; }
+        public string? BaseUnitName { get; set; }
     }
 }

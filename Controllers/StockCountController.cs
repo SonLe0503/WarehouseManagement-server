@@ -80,6 +80,7 @@ namespace warehouseManagement.Controllers
             var items = await _context.StockCountItems
                 .Where(x => x.StockCountSessionId == id)
                 .Include(x => x.Product)
+                .ThenInclude(p => p.BaseUnit)
                 .ToListAsync();
 
             return Ok(_mapper.Map<List<StockCountItemDTO>>(items));
