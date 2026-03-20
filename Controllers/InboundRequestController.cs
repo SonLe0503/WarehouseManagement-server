@@ -29,7 +29,8 @@ namespace warehouseManagement.Controllers
                 .ThenInclude(i => i.Product)
                 .Include(r => r.CreatedByNavigation)
                 .Include(r => r.ApprovedByNavigation)
-                .Include(r => r.Warehouse)
+                .Include(r => r.Warehouse) 
+                .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
 
             var requestDtos = _mapper.Map<List<InboundRequestDTO>>(requests);
