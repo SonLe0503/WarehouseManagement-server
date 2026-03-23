@@ -66,7 +66,7 @@ namespace warehouseManagement.Controllers
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var jwtToken = tokenHandler.WriteToken(token);
-            return Ok(new { message = "Đăng nhập thành công", Token = jwtToken });
+            return Ok(new { message = "Đăng nhập thành công", token = jwtToken });
         }
         [Authorize]
         [HttpPost("change-password")]
