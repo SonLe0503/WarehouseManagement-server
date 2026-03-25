@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using warehouseManagement.DTOs;
 using warehouseManagement.Models;
 
@@ -21,10 +22,19 @@ namespace warehouseManagement.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var user = await _context.Users
+        .FirstOrDefaultAsync(x => x.Id == userId);
+
+            if (user == null)
+                return NotFound();
+
             var inventories = await _context.Inventories
         .Include(x => x.Product)
-            .ThenInclude(p => p.BaseUnit)
+         .ThenInclude(p => p.BaseUnit)
         .Include(x => x.Warehouse)
+        .Where(x => x.WarehouseId == user.WarehouseId)
         .OrderByDescending(x => x.UpdatedAt)
         .ToListAsync();
 
