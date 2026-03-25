@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using warehouseManagement.DTOs.Sessions;
 using warehouseManagement.Models;
 
@@ -68,7 +69,16 @@ namespace warehouseManagement.Controllers
         [HttpGet("sessions")]
         public async Task<IActionResult> GetSessions()
         {
-            var sessions = await _context.StockCountSessions.ToListAsync();
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var user = await _context.Users
+        .FirstOrDefaultAsync(x => x.Id == userId);
+
+            if (user == null)
+                return NotFound();
+            var sessions = await _context.StockCountSessions
+                .Where(x => x.WarehouseId == user.WarehouseId)
+                .ToListAsync();
 
             return Ok(_mapper.Map<List<StockCountSessionDTO>>(sessions));
         }
