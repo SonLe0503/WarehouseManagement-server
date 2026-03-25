@@ -17,6 +17,8 @@ public partial class StockTransferItem
 
     public string? FromStoragePosition { get; set; }
 
+    public decimal? ShippedQuantity { get; set; }
+
     public string? ToStoragePosition { get; set; }
     public int UnitId { get; set; }
     public virtual Unit Unit { get; set; } = null!;

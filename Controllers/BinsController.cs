@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using warehouseManagement.DTOs;
 using warehouseManagement.Models;
 
@@ -23,8 +24,16 @@ namespace warehouseManagement.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] int? warehouseId)
         {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var user = await _context.Users
+        .FirstOrDefaultAsync(x => x.Id == userId);
+
+            if (user == null)
+                return NotFound();
             var query = _context.Bins
                 .Include(x => x.Warehouse)
+                .Where(x => x.WarehouseId == user.WarehouseId)
                 .AsQueryable();
 
             if (warehouseId.HasValue)
@@ -41,8 +50,16 @@ namespace warehouseManagement.Controllers
         [HttpGet("available")]
         public async Task<IActionResult> GetAvailable([FromQuery] int warehouseId)
         {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var user = await _context.Users
+        .FirstOrDefaultAsync(x => x.Id == userId);
+
+            if (user == null)
+                return NotFound();
+
             var bins = await _context.Bins
-                .Where(x => x.WarehouseId == warehouseId && x.Status == "Available")
+                .Where(x => x.WarehouseId == user.WarehouseId && x.Status == "Available")
                 .OrderBy(x => x.Code)
                 .ToListAsync();
 

@@ -16,43 +16,25 @@ public partial class WmsContext : DbContext
     }
 
     public virtual DbSet<Approval> Approvals { get; set; }
-
     public virtual DbSet<ApprovalLog> ApprovalLogs { get; set; }
-
     public virtual DbSet<Category> Categories { get; set; }
-
     public virtual DbSet<InboundItem> InboundItems { get; set; }
-
     public virtual DbSet<InboundRequest> InboundRequests { get; set; }
-
     public virtual DbSet<Inventory> Inventories { get; set; }
-
     public virtual DbSet<OutboundItem> OutboundItems { get; set; }
-
     public virtual DbSet<OutboundRequest> OutboundRequests { get; set; }
-
     public virtual DbSet<Product> Products { get; set; }
-
     public virtual DbSet<Role> Roles { get; set; }
-
     public virtual DbSet<StockMovement> StockMovements { get; set; }
-
     public virtual DbSet<StockTransferItem> StockTransferItems { get; set; }
-
     public virtual DbSet<StockTransferRequest> StockTransferRequests { get; set; }
-
     public virtual DbSet<Unit> Units { get; set; }
-
     public virtual DbSet<UnitConversion> UnitConversions { get; set; }
-
     public virtual DbSet<User> Users { get; set; }
-
     public virtual DbSet<Warehouse> Warehouses { get; set; }
     public virtual DbSet<Bin> Bins { get; set; }
     public DbSet<StockCountSession> StockCountSessions { get; set; }
-
     public DbSet<StockCountItem> StockCountItems { get; set; }
-
     public DbSet<AdjustmentReason> AdjustmentReasons { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) { }
@@ -62,7 +44,6 @@ public partial class WmsContext : DbContext
         modelBuilder.Entity<Approval>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Approval__3214EC079EEA8943");
-
             entity.Property(e => e.RefType).HasMaxLength(50);
             entity.Property(e => e.Status).HasMaxLength(20);
         });
@@ -70,7 +51,6 @@ public partial class WmsContext : DbContext
         modelBuilder.Entity<ApprovalLog>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Approval__3214EC079D570F04");
-
             entity.Property(e => e.Action).HasMaxLength(20);
             entity.Property(e => e.ActionAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.Comment).HasMaxLength(255);
@@ -87,7 +67,6 @@ public partial class WmsContext : DbContext
         modelBuilder.Entity<Category>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Categori__3214EC07CCCEB394");
-
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.Name).HasMaxLength(100);
 
@@ -99,7 +78,6 @@ public partial class WmsContext : DbContext
         modelBuilder.Entity<InboundItem>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__InboundI__3214EC075798DABA");
-
             entity.Property(e => e.LineNote).HasMaxLength(255);
             entity.Property(e => e.Quantity).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.ReceivedQuantity).HasColumnType("decimal(18, 2)");
@@ -124,9 +102,7 @@ public partial class WmsContext : DbContext
         modelBuilder.Entity<InboundRequest>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__InboundR__3214EC07AF35A290");
-
             entity.HasIndex(e => e.RequestNo, "UQ__InboundR__33A869A4045CBE22").IsUnique();
-
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.Note).HasMaxLength(255);
             entity.Property(e => e.RequestNo).HasMaxLength(50);
@@ -151,9 +127,7 @@ public partial class WmsContext : DbContext
         modelBuilder.Entity<Inventory>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Inventor__3214EC07F523929A");
-
             entity.HasIndex(e => new { e.ProductId, e.WarehouseId, e.StoragePosition }, "UQ_Product_Warehouse_Bin").IsUnique();
-
             entity.Property(e => e.Quantity).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.StoragePosition).HasMaxLength(100);
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(sysdatetime())");
@@ -172,7 +146,6 @@ public partial class WmsContext : DbContext
         modelBuilder.Entity<OutboundItem>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Outbound__3214EC0700E162EE");
-
             entity.Property(e => e.LineNote).HasMaxLength(255);
             entity.Property(e => e.PickedQuantity).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.Quantity).HasColumnType("decimal(18, 2)");
@@ -196,9 +169,7 @@ public partial class WmsContext : DbContext
         modelBuilder.Entity<OutboundRequest>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Outbound__3214EC0780210F71");
-
             entity.HasIndex(e => e.RequestNo, "UQ__Outbound__33A869A40FF14DA6").IsUnique();
-
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.CustomerName).HasMaxLength(150);
             entity.Property(e => e.Note).HasMaxLength(255);
@@ -223,14 +194,10 @@ public partial class WmsContext : DbContext
         modelBuilder.Entity<Product>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Products__3214EC072D8DC5C3");
-
             entity.HasIndex(e => e.Sku, "UQ__Products__CA1ECF0D3196D262").IsUnique();
-
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.Name).HasMaxLength(150);
-            entity.Property(e => e.Sku)
-                .HasMaxLength(50)
-                .HasColumnName("SKU");
+            entity.Property(e => e.Sku).HasMaxLength(50).HasColumnName("SKU");
             entity.Property(e => e.Status).HasMaxLength(20);
 
             entity.HasOne(d => d.BaseUnit).WithMany(p => p.Products)
@@ -247,16 +214,13 @@ public partial class WmsContext : DbContext
         modelBuilder.Entity<Role>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Roles__3214EC0783C615EE");
-
             entity.HasIndex(e => e.Name, "UQ__Roles__737584F6625A8735").IsUnique();
-
             entity.Property(e => e.Name).HasMaxLength(50);
         });
 
         modelBuilder.Entity<StockMovement>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__StockMov__3214EC072F62B318");
-
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.QuantityChange).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.RefType).HasMaxLength(50);
@@ -276,10 +240,10 @@ public partial class WmsContext : DbContext
         modelBuilder.Entity<StockTransferItem>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__StockTra__3214EC07B8B4D4CA");
-
             entity.Property(e => e.FromStoragePosition).HasMaxLength(100);
             entity.Property(e => e.LineNote).HasMaxLength(255);
             entity.Property(e => e.Quantity).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.ShippedQuantity).HasColumnType("decimal(18, 2)");  // ← thêm
             entity.Property(e => e.ReceivedQuantity).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.ToStoragePosition).HasMaxLength(100);
 
@@ -302,9 +266,7 @@ public partial class WmsContext : DbContext
         modelBuilder.Entity<StockTransferRequest>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__StockTra__3214EC07DE6315E3");
-
             entity.HasIndex(e => e.TransferNo, "UQ__StockTra__9548BE629861B165").IsUnique();
-
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.Note).HasMaxLength(255);
             entity.Property(e => e.Status).HasMaxLength(20);
@@ -333,9 +295,7 @@ public partial class WmsContext : DbContext
         modelBuilder.Entity<Unit>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Units__3214EC07DF9EB686");
-
             entity.HasIndex(e => e.Code, "UQ__Units__A25C5AA767180E21").IsUnique();
-
             entity.Property(e => e.Code).HasMaxLength(20);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.Description).HasMaxLength(255);
@@ -345,9 +305,7 @@ public partial class WmsContext : DbContext
         modelBuilder.Entity<UnitConversion>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__UnitConv__3214EC07806BF8FC");
-
             entity.HasIndex(e => new { e.ProductId, e.FromUnitId }, "UQ_Product_FromUnit").IsUnique();
-
             entity.Property(e => e.ConversionFactor).HasColumnType("decimal(18, 6)");
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
@@ -370,9 +328,7 @@ public partial class WmsContext : DbContext
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Users__3214EC071C4F9126");
-
             entity.HasIndex(e => e.Username, "UQ__Users__536C85E4A48DD635").IsUnique();
-
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.Email).HasMaxLength(100);
             entity.Property(e => e.PasswordHash).HasMaxLength(255);
@@ -404,101 +360,58 @@ public partial class WmsContext : DbContext
         modelBuilder.Entity<Warehouse>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Warehous__3214EC0768FE66B8");
-
             entity.HasIndex(e => e.Code, "UQ__Warehous__A25C5AA7BBD28221").IsUnique();
-
             entity.Property(e => e.Address).HasMaxLength(255);
             entity.Property(e => e.Code).HasMaxLength(50);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.Name).HasMaxLength(150);
             entity.Property(e => e.Status).HasMaxLength(20);
         });
+
         modelBuilder.Entity<StockCountSession>(entity =>
         {
             entity.ToTable("StockCountSessions");
-
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.CountNo).HasMaxLength(50);
+            entity.HasIndex(e => e.CountNo).IsUnique();
+            entity.Property(e => e.Status).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Note).HasMaxLength(255);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSDATETIME()");
 
-            entity.Property(e => e.CountNo)
-                .HasMaxLength(50);
+            entity.HasOne(e => e.Warehouse).WithMany().HasForeignKey(e => e.WarehouseId);
 
-            entity.HasIndex(e => e.CountNo)
-                .IsUnique();
-
-            entity.Property(e => e.Status)
-                .HasMaxLength(20)
-                .IsRequired();
-
-            entity.Property(e => e.Note)
-                .HasMaxLength(255);
-
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("SYSDATETIME()");
-
-            entity.HasOne(e => e.Warehouse)
-                .WithMany()
-                .HasForeignKey(e => e.WarehouseId);
-
-            entity.HasOne(e => e.CreatedUser)
-                .WithMany()
+            entity.HasOne(e => e.CreatedUser).WithMany()
                 .HasForeignKey(e => e.CreatedBy)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne(e => e.ApprovedUser)
-                .WithMany()
+            entity.HasOne(e => e.ApprovedUser).WithMany()
                 .HasForeignKey(e => e.ApprovedBy)
                 .OnDelete(DeleteBehavior.Restrict);
         });
+
         modelBuilder.Entity<StockCountItem>(entity =>
         {
             entity.ToTable("StockCountItems");
-
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.StoragePosition).HasMaxLength(100);
+            entity.Property(e => e.SystemQuantity).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.ActualQuantity).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.Difference).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.Note).HasMaxLength(255);
 
-            entity.Property(e => e.StoragePosition)
-                .HasMaxLength(100);
+            entity.HasOne(e => e.Session).WithMany(s => s.Items).HasForeignKey(e => e.StockCountSessionId);
+            entity.HasOne(e => e.Product).WithMany().HasForeignKey(e => e.ProductId);
+            entity.HasOne(e => e.Reason).WithMany(r => r.StockCountItems).HasForeignKey(e => e.ReasonId);
 
-            entity.Property(e => e.SystemQuantity)
-                .HasColumnType("decimal(18,2)");
-
-            entity.Property(e => e.ActualQuantity)
-                .HasColumnType("decimal(18,2)");
-
-            entity.Property(e => e.Difference)
-                .HasColumnType("decimal(18,2)");
-
-            entity.Property(e => e.Note)
-                .HasMaxLength(255);
-
-            entity.HasOne(e => e.Session)
-                .WithMany(s => s.Items)
-                .HasForeignKey(e => e.StockCountSessionId);
-
-            entity.HasOne(e => e.Product)
-                .WithMany()
-                .HasForeignKey(e => e.ProductId);
-
-            entity.HasOne(e => e.Reason)
-                .WithMany(r => r.StockCountItems)
-                .HasForeignKey(e => e.ReasonId);
-            entity.HasIndex(e => new
-            {
-                e.StockCountSessionId,
-                e.ProductId,
-                e.StoragePosition
-            }).IsUnique();
+            entity.HasIndex(e => new { e.StockCountSessionId, e.ProductId, e.StoragePosition }).IsUnique();
         });
+
         modelBuilder.Entity<AdjustmentReason>(entity =>
         {
             entity.ToTable("AdjustmentReasons");
-
             entity.HasKey(e => e.Id);
-
-            entity.Property(e => e.Code)
-                .HasMaxLength(50);
-
-            entity.Property(e => e.Name)
-                .HasMaxLength(100);
+            entity.Property(e => e.Code).HasMaxLength(50);
+            entity.Property(e => e.Name).HasMaxLength(100);
         });
 
         modelBuilder.Entity<Bin>(entity =>

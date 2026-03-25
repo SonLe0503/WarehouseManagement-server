@@ -8,10 +8,6 @@ using warehouseManagement.Models;
 
 namespace warehouseManagement.Controllers
 {
-    /// <summary>
-    /// Chuyển hàng giữa 2 kho khác nhau — flow: Pending → Approve → Ship → Receive → Completed
-    /// Route: /api/CrossWarehouseTransfer
-    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class CrossWarehouseTransferController : ControllerBase
@@ -35,7 +31,7 @@ namespace warehouseManagement.Controllers
                 .Include(r => r.ApprovedByNavigation)
                 .Include(r => r.FromWarehouse)
                 .Include(r => r.ToWarehouse)
-                .Where(r => r.FromWarehouseId != r.ToWarehouseId) // chỉ lấy cross-warehouse
+                .Where(r => r.FromWarehouseId != r.ToWarehouseId)
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
 
@@ -107,7 +103,6 @@ namespace warehouseManagement.Controllers
                 if (product == null)
                     return BadRequest($"Không tìm thấy sản phẩm Id={item.ProductId}");
 
-                // Nếu FE không truyền UnitId thì dùng BaseUnitId
                 int resolvedUnitId = item.UnitId > 0 ? item.UnitId : product.BaseUnitId;
 
                 _context.StockTransferItems.Add(new StockTransferItem
@@ -205,7 +200,9 @@ namespace warehouseManagement.Controllers
 
                     inventory.Quantity -= shipItem.PickedQuantity;
                     inventory.UpdatedAt = DateTime.UtcNow;
+
                     item.FromStoragePosition = shipItem.StoragePosition;
+                    item.ShippedQuantity = shipItem.PickedQuantity; // ← lưu SL thực xuất
                     if (shipItem.LineNote != null) item.LineNote = shipItem.LineNote;
 
                     _context.StockMovements.Add(new StockMovement
@@ -256,6 +253,8 @@ namespace warehouseManagement.Controllers
                 foreach (var receiveItem in dto.Items)
                 {
                     var item = request.StockTransferItems.First(i => i.Id == receiveItem.StockTransferItemId);
+
+                    // Lưu tổng SL thực nhận từ binQuantities
                     item.ReceivedQuantity = receiveItem.BinQuantities.Sum(b => b.Quantity);
                     item.ToStoragePosition = receiveItem.BinQuantities.FirstOrDefault()?.StoragePosition;
                     if (receiveItem.LineNote != null) item.LineNote = receiveItem.LineNote;
@@ -270,7 +269,7 @@ namespace warehouseManagement.Controllers
 
                         if (inventory != null)
                         {
-                            inventory.Quantity += binQty.Quantity;
+                            inventory.Quantity += binQty.Quantity; // cộng đúng SL thực nhận
                             inventory.UpdatedAt = DateTime.UtcNow;
                         }
                         else
