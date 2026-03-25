@@ -24,12 +24,23 @@ namespace warehouseManagement.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OutboundRequestDTO>>> GetOutboundRequests()
         {
+
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var user = await _context.Users
+        .FirstOrDefaultAsync(x => x.Id == userId);
+
+            if (user == null)
+                return NotFound();
+
+
             var requests = await _context.OutboundRequests
                 .Include(r => r.OutboundItems)
                 .ThenInclude(i => i.Product)
                 .Include(r => r.CreatedByNavigation)
                 .Include(r => r.ApprovedByNavigation)
                 .Include(r => r.Warehouse)
+                .Where( x => x.WarehouseId == user.WarehouseId)
                 .ToListAsync();
 
             var requestDtos = _mapper.Map<List<OutboundRequestDTO>>(requests);
