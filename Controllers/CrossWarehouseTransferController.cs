@@ -56,7 +56,7 @@ namespace warehouseManagement.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "MANAGE,STAFF")]
+        [Authorize(Roles = "MANAGE")]
         public async Task<IActionResult> Create([FromBody] StockTransferCreateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -120,7 +120,7 @@ namespace warehouseManagement.Controllers
         }
 
         [HttpPost("{id}/approval")]
-        [Authorize(Roles = "MANAGE,STAFF")]
+        [Authorize(Roles = "MANAGE")]
         public async Task<IActionResult> ApproveOrReject(int id, [FromBody] StockTransferApproveDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -164,7 +164,7 @@ namespace warehouseManagement.Controllers
         }
 
         [HttpPost("{id}/ship")]
-        [Authorize(Roles = "STAFF,MANAGE")]
+        [Authorize(Roles = "STAFF")]
         public async Task<IActionResult> ShipGoods(int id, [FromBody] StockTransferShipDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -231,7 +231,7 @@ namespace warehouseManagement.Controllers
         }
 
         [HttpPost("{id}/receive")]
-        [Authorize(Roles = "STAFF,MANAGE")]
+        [Authorize(Roles = "STAFF")]
         public async Task<IActionResult> ReceiveGoods(int id, [FromBody] StockTransferReceiveDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
