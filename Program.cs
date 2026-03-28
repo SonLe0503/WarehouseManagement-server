@@ -52,7 +52,6 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1",
         Description = "API Authentication with JWT for WarehouseManagement"
     });
-
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -61,6 +60,22 @@ builder.Services.AddSwaggerGen(c =>
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
         Description = "Nhập token ở dạng: Bearer {token}"
+    });
+
+    
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
     });
 
     c.OperationFilter<AuthorizeCheckOperationFilter>();

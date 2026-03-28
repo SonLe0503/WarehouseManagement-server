@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -7,6 +8,7 @@ using warehouseManagement.Models;
 
 namespace warehouseManagement.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class BinsController : ControllerBase
@@ -20,7 +22,7 @@ namespace warehouseManagement.Controllers
             _mapper = mapper;
         }
 
-       
+
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] int? warehouseId)
         {
@@ -31,6 +33,8 @@ namespace warehouseManagement.Controllers
 
             if (user == null)
                 return NotFound();
+
+
             var query = _context.Bins
                 .Include(x => x.Warehouse)
                 .Where(x => x.WarehouseId == user.WarehouseId)
@@ -66,7 +70,7 @@ namespace warehouseManagement.Controllers
             return Ok(_mapper.Map<List<BinViewDto>>(bins));
         }
 
-      
+
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] BinCreateDto dto)
         {
@@ -83,7 +87,7 @@ namespace warehouseManagement.Controllers
             return Ok(_mapper.Map<BinViewDto>(bin));
         }
 
- 
+
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] BinUpdateDto dto)
         {
@@ -98,14 +102,14 @@ namespace warehouseManagement.Controllers
             return Ok(_mapper.Map<BinViewDto>(bin));
         }
 
-        
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var bin = await _context.Bins.FindAsync(id);
             if (bin == null) return NotFound("Bin không tồn tại");
 
-           
+
             var hasInventory = await _context.Inventories
                 .AnyAsync(x => x.StoragePosition == bin.Code && x.WarehouseId == bin.WarehouseId);
             if (hasInventory)
@@ -114,6 +118,43 @@ namespace warehouseManagement.Controllers
             _context.Bins.Remove(bin);
             await _context.SaveChangesAsync();
             return Ok(new { Message = "Xóa bin thành công" });
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetProductByBinId(int id)
+        {
+
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var user = await _context.Users
+        .FirstOrDefaultAsync(x => x.Id == userId);
+
+            if (user == null)
+                return NotFound();
+
+            var bin = await _context.Bins
+            .Include(x => x.Warehouse)
+            .FirstOrDefaultAsync(x => x.Id == id && x.WarehouseId == user.WarehouseId);
+
+
+            var inventory = await _context.Inventories
+                .Include(x => x.Product)
+                .Where(x => x.StoragePosition == bin.Code && x.WarehouseId == bin.WarehouseId)
+                .ToListAsync();
+
+
+
+            return Ok(new
+            {
+                bin = _mapper.Map<BinViewDto>(bin),
+                products = inventory.Select(i => new
+                {
+                    productId = i.Product.Id,
+                    sku = i.Product.Sku,
+                    name = i.Product.Name,
+                    quantity = i.Quantity
+                })
+            });
         }
     }
 }
