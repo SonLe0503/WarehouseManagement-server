@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using warehouseManagement.DTOs;
 using warehouseManagement.Models;
@@ -7,6 +8,7 @@ namespace warehouseManagement.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class WarehouseController : Controller
     {
         private readonly WmsContext _context;
@@ -84,11 +86,11 @@ namespace warehouseManagement.Controllers
             if (warehouse == null)
                 return NotFound("Warehouse not found");
 
-            if (await _context.Warehouses
-                .AnyAsync(w => w.Code == dto.Code && w.Id != dto.Id))
-            {
-                return BadRequest("Warehouse code already exists.");
-            }
+            //if (await _context.Warehouses
+            //    .AnyAsync(w => w.Code == dto.Code && w.Id != dto.Id))
+            //{
+            //    return BadRequest("Warehouse code already exists.");
+            //}
             warehouse.Code = dto.Code;
             warehouse.Name = dto.Name;
             warehouse.Address = dto.Address;

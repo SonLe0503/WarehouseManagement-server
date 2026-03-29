@@ -9,6 +9,7 @@ using warehouseManagement.Models;
 namespace warehouseManagement.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("api/[controller]")]
     public class OutboundRequestController : Controller
     {

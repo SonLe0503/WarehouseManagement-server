@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using warehouseManagement.DTOs;
 using warehouseManagement.Services;
@@ -6,6 +7,7 @@ using warehouseManagement.Services;
 namespace warehouseManagement.Controllers
 {
     [Route("api/[controller]")]
+    [Authorize]
     [ApiController]
     public class UnitConversionsController : Controller
     {

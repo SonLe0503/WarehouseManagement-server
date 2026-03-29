@@ -8,6 +8,7 @@ using warehouseManagement.Services;
 namespace warehouseManagement.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("api/[controller]")]
     public class UserController : Controller
     {
